@@ -48,6 +48,9 @@ public class Main {
 
         apktoolCmd = new String[] {"b", workingDir.toString()};
         brut.apktool.Main.main(apktoolCmd);
+        Path newApk = Paths.get(workingDir.toString(), "dist", apkName + ".apk");
+        //TODO: zipalign
+        //TODO: sign
     }
 
 
