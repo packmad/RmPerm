@@ -32,12 +32,18 @@ public class ManifestManager {
     private ArrayList<String> currentPerms = new ArrayList<>();
     private HashSet<String> removedPerms = new HashSet<>();
 
-    public ManifestManager(String manifestPath) throws IOException, ParserConfigurationException, SAXException {
+    public ManifestManager(String manifestPath) {
         this.manifestPath = manifestPath;
         File fXmlFile = new File(manifestPath);
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        this.manifestDoc = dBuilder.parse(fXmlFile);
+        DocumentBuilder dBuilder = null;
+        try {
+            dBuilder = dbFactory.newDocumentBuilder();
+            this.manifestDoc = dBuilder.parse(fXmlFile);
+        } catch (ParserConfigurationException|SAXException|IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
         manifestDoc.getDocumentElement().normalize();
         NodeList nList = manifestDoc.getElementsByTagName("uses-permission");
         for (int i=0; i<nList.getLength(); i++) {
@@ -53,11 +59,18 @@ public class ManifestManager {
         stub();
         writeToFile();
     }
+
+    public HashSet<String> getRemovedPerms() {
+        return removedPerms;
+    }
+
+
     public void stub() {
         removePermission(0);
+        /*
         removePermission(7);
         removePermission(4);
-        //removePermission(35);
+        removePermission(35);*/
         System.out.println(this);
     }
 
@@ -77,7 +90,7 @@ public class ManifestManager {
         }
     }
 
-    private void writeToFile() {
+    private void writeToFile() { //TODO: replace old manifest
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         try {
             Transformer transformer = transformerFactory.newTransformer();
@@ -91,8 +104,6 @@ public class ManifestManager {
         }
 
     }
-
-
 
     public void askRemoval() {
         Scanner scanner = new Scanner(System.in);

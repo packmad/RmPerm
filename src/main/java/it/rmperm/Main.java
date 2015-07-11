@@ -1,9 +1,11 @@
 package it.rmperm;
 
+import brut.common.BrutException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -14,14 +16,9 @@ public class Main {
     public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; ////TODO: infer from custom dex file
     public static ManifestManager manifestManager; //TODO: move away from main
 
-    private static final String ALLMAPPINGS = "C:\\Users\\Simone\\Downloads\\apks\\mappings\\allMappings.txt"; //TODO: read cmdline
-    private static final String FAKEDMAPPINGS = "C:\\Users\\Simone\\Downloads\\apks\\mappings\\fakedMappings.txt";//TODO: read from custom dexes
+    private static final String ALLMAPPINGS = "C:\\Users\\Simone\\workspace\\rmperm\\files\\allMappings.txt"; //TODO: relative path
 
-    public static PermissionLoader allPerms; //TODO: move away from main
-    public static PermissionLoader fakedPerms; //TODO: move away from main
-
-    public static void main(String[] args) throws Exception {
-
+    public static void main(String[] args) {
 
         String akpPath = "C:\\Users\\Simone\\Downloads\\apks\\com.boombit.RunningCircles.apk"; //TODO: read cmdline
         String outDir = "C:\\Users\\Simone\\Downloads\\apks\\outputs\\"; //TODO: read cmdline
@@ -30,25 +27,41 @@ public class Main {
         workingDir = Paths.get(System.getProperty("java.io.tmpdir"), "rmperm", apkName);
         //System.out.println(workingDir);
 
-        FileUtils.deleteDirectory(new File(workingDir.toString()));
-        String[] apktoolCmd = {"d", "-s", akpPath, "-f", "-o", workingDir.toString()};
-        brut.apktool.Main.main(apktoolCmd);
+        try {
+            FileUtils.deleteDirectory(new File(workingDir.toString()));
+            String[] apktoolCmd = {"d", "-s", akpPath, "-f", "-o", workingDir.toString()};
+            brut.apktool.Main.main(apktoolCmd);
+        } catch (IOException|InterruptedException|BrutException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
 
         String customDex = "C:\\Users\\Simone\\AndroidStudioProjects\\EmptyAppWithHackClass\\app\\build\\outputs\\apk\\app-debug.apk"; //TODO: read cmdline
-        CustomMethodManager cmm = new CustomMethodManager(Paths.get(customDex), customClassObj);
-
-        allPerms = new PermissionLoader(ALLMAPPINGS);
-        fakedPerms = new PermissionLoader(FAKEDMAPPINGS);
+        CustomMethodsLoader customMethods = new CustomMethodsLoader(Paths.get(customDex), customClassObj);
+        AllMethodsLoader allMethods = new AllMethodsLoader(ALLMAPPINGS);
 
         Path manifestPath = Paths.get(workingDir.toString(), "AndroidManifest.xml");
         manifestManager = new ManifestManager(manifestPath.toString());
 
 
-        Customizer.doTheDirtyWork(akpPath, Paths.get(workingDir.toString(), "classes.dex"), cmm.getCustomClasses());
+        Customizer customizer = new Customizer(
+                allMethods.getPermissionToMethods(),
+                customMethods.getPermissionToCustomMethods(),
+                customMethods.getCustomClasses(),
+                manifestManager.getRemovedPerms(),
+                akpPath,
+                Paths.get(workingDir.toString(), "classes.dex"));
+        customizer.doTheDirtyWork();
 
-        apktoolCmd = new String[] {"b", workingDir.toString()};
-        brut.apktool.Main.main(apktoolCmd);
-        Path newApk = Paths.get(workingDir.toString(), "dist", apkName + ".apk");
+        Path newApk = Paths.get(workingDir.toString(), "dist", apkName + "-unaligned.apk");
+        String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApk.toString()};
+        try {
+            brut.apktool.Main.main(apktoolCmd);
+        } catch (IOException|InterruptedException|BrutException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        System.out.println(newApk.toString());
         //TODO: zipalign
         //TODO: sign
     }
