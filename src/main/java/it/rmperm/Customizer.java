@@ -1,6 +1,7 @@
 package it.rmperm;
 
 
+import it.rmperm.loader.CustomMethodsLoader;
 import it.rmperm.meth.DexMethod;
 import it.rmperm.meth.DexPermMethod;
 import org.jf.dexlib2.DexFileFactory;
@@ -10,7 +11,6 @@ import org.jf.dexlib2.builder.MutableMethodImplementation;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction11n;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction11x;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction35c;
-import org.jf.dexlib2.dexbacked.instruction.DexBackedInstruction35c;
 import org.jf.dexlib2.dexbacked.reference.DexBackedMethodReference;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;

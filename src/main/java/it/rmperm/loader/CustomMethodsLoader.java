@@ -1,4 +1,4 @@
-package it.rmperm;
+package it.rmperm.loader;
 
 
 import com.google.common.collect.ImmutableSet;
