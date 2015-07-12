@@ -15,7 +15,9 @@ import java.nio.file.Paths;
 
 public class Main {
     public static Path workingDir;
-    public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; ////TODO: infer from custom dex file
+    public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; //TODO: infer from custom dex file
+    public static final String zipAlignPath = "C:\\Program Files (x86)\\Android\\android-sdk\\build-tools\\21.1.2\\zipalign.exe"; //TODO: alt way
+    public static final String jarSignerPath = "C:\\Program Files\\Java\\jdk1.8.0_45\\bin\\jarsigner"; //TODO: alt way
     public static ManifestManager manifestManager; //TODO: move away from main
 
     private static final String ALLMAPPINGS = "C:\\Users\\Simone\\workspace\\rmperm\\files\\allMappings.txt"; //TODO: relative path
@@ -55,17 +57,50 @@ public class Main {
                 Paths.get(workingDir.toString(), "classes.dex"));
         customizer.doTheDirtyWork();
 
-        Path newApk = Paths.get(workingDir.toString(), "dist", apkName + "-unaligned.apk");
-        String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApk.toString()};
+        Path newApkUnaligned = Paths.get(workingDir.toString(), "dist", apkName + "-unaligned.apk");
+        String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApkUnaligned.toString()};
         try {
             brut.apktool.Main.main(apktoolCmd);
         } catch (IOException|InterruptedException|BrutException e) {
             e.printStackTrace();
             System.exit(-1);
         }
-        System.out.println(newApk.toString());
-        //TODO: zipalign
-        //TODO: sign
+        System.out.println(newApkUnaligned.toString());
+
+        Path newApkAligned = Paths.get(outDir, apkName + ".apk");
+
+        //TODO: zipalign and sign programmatically
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    zipAlignPath,
+                    "-f",
+                    "-v", "4",
+                    newApkUnaligned.toString(),
+                    newApkAligned.toString()
+                );
+            pb.inheritIO();
+            Process p = pb.start();
+            p.waitFor();
+            pb = new ProcessBuilder(
+                    jarSignerPath,
+                    "-verbose",
+                    "-sigalg", "SHA1withRSA",
+                    "-digestalg", "SHA1",
+                    "-keystore", "C:\\Users\\Simone\\.android\\debug.keystore",
+                    newApkAligned.toString(),
+                    "androiddebugkey",
+                    "-storepass", "android"
+            );
+            pb.inheritIO();
+            p = pb.start();
+            p.waitFor();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(newApkAligned.toString());
     }
 
 

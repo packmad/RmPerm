@@ -67,10 +67,8 @@ public class ManifestManager {
 
     public void stub() {
         removePermission(0);
-        /*
-        removePermission(7);
         removePermission(4);
-        removePermission(35);*/
+        removePermission(6);
         System.out.println(this);
     }
 
@@ -95,12 +93,11 @@ public class ManifestManager {
         try {
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(manifestDoc);
-            StreamResult result = new StreamResult(new File(manifestPath+"new.xml"));
+            StreamResult result = new StreamResult(new File(manifestPath)); // overwrite original manifest
             transformer.transform(source, result);
-        } catch (TransformerConfigurationException e) {
-            e.printStackTrace();
         } catch (TransformerException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
 
     }
