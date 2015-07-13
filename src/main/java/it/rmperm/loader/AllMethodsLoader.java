@@ -1,6 +1,7 @@
 package it.rmperm.loader;
 
-import it.rmperm.meth.*;
+import it.rmperm.meth.AbstractDexMethod;
+import it.rmperm.meth.DexPermMethod;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -37,7 +38,7 @@ public class AllMethodsLoader {
                 if (permMatcher.matches()) {
                     permission = permMatcher.group(1);
                     if (!permissionToMethods.containsKey(permission))
-                        permissionToMethods.put(permission, new ArrayList<DexPermMethod>());
+                        permissionToMethods.put(permission, new ArrayList<>());
                 }
                 else {
                     Matcher methodMatcher = methodPattern.matcher(line);

@@ -10,7 +10,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -27,19 +26,20 @@ import java.util.Scanner;
 
 
 public class ManifestManager {
-    private String manifestPath;
+    private final String manifestPath;
     private Document manifestDoc = null;
-    private ArrayList<String> currentPerms = new ArrayList<>();
-    private HashSet<String> removedPerms = new HashSet<>();
+    private ArrayList<String> permsOriginal = new ArrayList<>();
+    private HashSet<String> permsToRem;
 
-    public ManifestManager(String manifestPath) {
+    public ManifestManager(String manifestPath, HashSet<String> permsToRem) {
+        this.permsToRem = permsToRem;
         this.manifestPath = manifestPath;
-        File fXmlFile = new File(manifestPath);
+        File xmlFile = new File(manifestPath);
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = null;
+        DocumentBuilder dBuilder;
         try {
             dBuilder = dbFactory.newDocumentBuilder();
-            this.manifestDoc = dBuilder.parse(fXmlFile);
+            this.manifestDoc = dBuilder.parse(xmlFile);
         } catch (ParserConfigurationException|SAXException|IOException e) {
             e.printStackTrace();
             System.exit(-1);
@@ -51,27 +51,17 @@ public class ManifestManager {
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
                 Element eElement = (Element) nNode;
                 String p = eElement.getAttribute("android:name");
-                currentPerms.add(p);
+                permsOriginal.add(p);
             }
         }
-        //askRemoval();
-
-        stub();
+        for (String p : permsToRem)
+            removePermission(p);
         writeToFile();
     }
 
-    public HashSet<String> getRemovedPerms() {
-        return removedPerms;
+    public HashSet<String> getPermsToRem() {
+        return permsToRem;
     }
-
-
-    public void stub() {
-        removePermission(0);
-        removePermission(4);
-        removePermission(6);
-        System.out.println(this);
-    }
-
 
     private void removeRECEIVE_BOOT_COMPLETED() {
         String xpathExpr = "/manifest/application/receiver/intent-filter/action[@name='android.intent.action.BOOT_COMPLETED']";
@@ -88,7 +78,7 @@ public class ManifestManager {
         }
     }
 
-    private void writeToFile() { //TODO: replace old manifest
+    private void writeToFile() {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         try {
             Transformer transformer = transformerFactory.newTransformer();
@@ -118,12 +108,12 @@ public class ManifestManager {
 
     private void removePermission(int x) {
         try {
-            String permission = currentPerms.get(x);
+            String permission = permsOriginal.get(x);
             if (permission.equals("android.permission.RECEIVE_BOOT_COMPLETED")) {
                 removeRECEIVE_BOOT_COMPLETED();
             }
-            removedPerms.add(permission);
-            currentPerms.remove(x);
+            permsToRem.add(permission);
+            permsOriginal.remove(x);
             String xpathExpr = "/manifest/uses-permission[@name='" + permission + "']";
             XPath xPath =  XPathFactory.newInstance().newXPath();
             Node node = (Node) xPath.compile(xpathExpr).evaluate(manifestDoc, XPathConstants.NODE);
@@ -138,8 +128,27 @@ public class ManifestManager {
         }
     }
 
-    public boolean mustBeRemoved(String permission) {
-        return removedPerms.contains(permission);
+    private void removePermission(String p) {
+        if (permsOriginal.contains(p)) {
+            if (p.equals("android.permission.RECEIVE_BOOT_COMPLETED")) {
+                removeRECEIVE_BOOT_COMPLETED();
+            }
+            else {
+                String xpathExpr = "/manifest/uses-permission[@name='" + p + "']";
+                XPath xPath =  XPathFactory.newInstance().newXPath();
+                Node node = null;
+                try {
+                    node = (Node) xPath.compile(xpathExpr).evaluate(manifestDoc, XPathConstants.NODE);
+                } catch (XPathExpressionException e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
+                node.getParentNode().removeChild(node);
+            }
+        }
+        else {
+            System.err.print("You are trying to remove a permission that doesn't exists in the original manifest: " + p);
+        }
     }
 
     @Override
@@ -147,13 +156,13 @@ public class ManifestManager {
         StringBuilder sb = new StringBuilder();
         int i=0;
         sb.append("Current APK permissions:\n");
-        for (String s : currentPerms) {
+        for (String s : permsOriginal) {
             sb.append("\t" + i++ + "->" + s + "\n");
-        };
+        }
         sb.append("Permissions that will be removed:\n");
-        for (String s : removedPerms) {
+        for (String s : permsToRem) {
             sb.append("\t" + s + "\n");
-        };
+        }
         return sb.toString();
     }
 }

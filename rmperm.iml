@@ -17,5 +17,6 @@
     <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="library" name="apktool-2.0.1-patched" level="project" />
+    <orderEntry type="library" name="signapk" level="project" />
   </component>
 </module>

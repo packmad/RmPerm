@@ -1,17 +1,12 @@
 package it.rmperm.loader;
 
-
-import com.google.common.collect.ImmutableSet;
 import it.rmperm.meth.AbstractDexMethod;
 import it.rmperm.meth.DexPermMethod;
 import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.dexbacked.DexBackedAnnotation;
 import org.jf.dexlib2.dexbacked.DexBackedAnnotationElement;
 import org.jf.dexlib2.dexbacked.value.DexBackedStringEncodedValue;
 import org.jf.dexlib2.iface.*;
-import org.jf.dexlib2.iface.instruction.Instruction;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -71,7 +66,7 @@ public class CustomMethodsLoader {
                                     }
                                 }
                                 if (!permissionToCustomMethods.containsKey(perm)) {
-                                    permissionToCustomMethods.put(perm, new ArrayList<DexPermMethod>());
+                                    permissionToCustomMethods.put(perm, new ArrayList<>());
                                 }
                                 parms = new ArrayList<>();
                                 for (CharSequence cs : method.getParameterTypes()) {

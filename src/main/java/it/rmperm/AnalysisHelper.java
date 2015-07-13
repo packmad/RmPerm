@@ -1,6 +1,5 @@
 package it.rmperm;
 
-
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
@@ -10,8 +9,6 @@ import org.jf.dexlib2.iface.instruction.Instruction;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AnalysisHelper {
 

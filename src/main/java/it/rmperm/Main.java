@@ -3,33 +3,38 @@ package it.rmperm;
 import brut.common.BrutException;
 import it.rmperm.loader.AllMethodsLoader;
 import it.rmperm.loader.CustomMethodsLoader;
+import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Main {
+    private static final Options options = new Options();
     public static Path workingDir;
     public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; //TODO: infer from custom dex file
     public static final String zipAlignPath = "C:\\Program Files (x86)\\Android\\android-sdk\\build-tools\\21.1.2\\zipalign.exe"; //TODO: alt way
     public static final String jarSignerPath = "C:\\Program Files\\Java\\jdk1.8.0_45\\bin\\jarsigner"; //TODO: alt way
-    public static ManifestManager manifestManager; //TODO: move away from main
+    private static final String allMappings = System.getProperty("user.dir") + "\\files\\allMappings.txt";
 
-    private static final String ALLMAPPINGS = "C:\\Users\\Simone\\workspace\\rmperm\\files\\allMappings.txt"; //TODO: relative path
+    private static HashSet<String> permsToRem = new HashSet<>(); // -p
+    private static String akpPath; // -s
+    private static String outDir; // -d
+    private static String customDex; // -c
+
 
     public static void main(String[] args) {
-
-        String akpPath = "C:\\Users\\Simone\\Downloads\\apks\\com.boombit.RunningCircles.apk"; //TODO: read cmdline
-        String outDir = "C:\\Users\\Simone\\Downloads\\apks\\outputs\\"; //TODO: read cmdline
+        parseCmdLine(args);
         String apkName = FilenameUtils.getBaseName(akpPath);
-
         workingDir = Paths.get(System.getProperty("java.io.tmpdir"), "rmperm", apkName);
-        //System.out.println(workingDir);
 
         try {
             FileUtils.deleteDirectory(new File(workingDir.toString()));
@@ -40,19 +45,17 @@ public class Main {
             System.exit(-1);
         }
 
-        String customDex = "C:\\Users\\Simone\\AndroidStudioProjects\\EmptyAppWithHackClass\\app\\build\\outputs\\apk\\app-debug.apk"; //TODO: read cmdline
         CustomMethodsLoader customMethods = new CustomMethodsLoader(Paths.get(customDex), customClassObj);
-        AllMethodsLoader allMethods = new AllMethodsLoader(ALLMAPPINGS);
+        AllMethodsLoader allMethods = new AllMethodsLoader(allMappings);
 
         Path manifestPath = Paths.get(workingDir.toString(), "AndroidManifest.xml");
-        manifestManager = new ManifestManager(manifestPath.toString());
-
+        ManifestManager manifestManager = new ManifestManager(manifestPath.toString(), permsToRem);
 
         Customizer customizer = new Customizer(
                 allMethods.getPermissionToMethods(),
                 customMethods.getPermissionToCustomMethods(),
                 customMethods.getCustomClasses(),
-                manifestManager.getRemovedPerms(),
+                manifestManager.getPermsToRem(),
                 akpPath,
                 Paths.get(workingDir.toString(), "classes.dex"));
         customizer.doTheDirtyWork();
@@ -103,5 +106,68 @@ public class Main {
         System.out.println(newApkAligned.toString());
     }
 
+
+    private static void parseCmdLine(String[] args) {
+        options.addOption("s", "src", true, "Apk source path")
+                .addOption("d", "dest", true, "Destination folder")
+                .addOption("c", "cust", true, "apk/dex with custom class/methods path")
+                .addOption("p", "perms", true, "CSV permissions list to remove");
+        CommandLine cmdline = null;
+        CommandLineParser parser = new GnuParser();
+        try {
+            cmdline = parser.parse(options, args);
+        } catch (ParseException exp) {
+            System.err.println("Error parsing command line: " + exp.getMessage());
+            printHelp();
+            System.exit(-1);
+        }
+
+
+        if (cmdline.hasOption("s") || cmdline.hasOption("src")) {
+            akpPath = cmdline.getOptionValue("s");
+        }
+        else {
+            paramsError("Missing src");
+        }
+        if (cmdline.hasOption("d") || cmdline.hasOption("dest")) {
+            outDir = cmdline.getOptionValue("d");
+        }
+        else {
+            paramsError("Missing dest");
+        }
+        if (cmdline.hasOption("c") || cmdline.hasOption("cust")) {
+            customDex = cmdline.getOptionValue("c");
+        }
+        else {
+            paramsError("Missing cust");
+        }
+        if (cmdline.hasOption("p") || cmdline.hasOption("perms")) {
+            Pattern permPattern = Pattern.compile("^android.permission.[A-Z_]*$");
+            String[] perms = cmdline.getOptionValue("p").split(",");
+            for(String p : perms) {
+                Matcher permMatcher = permPattern.matcher(p);
+                if (!permMatcher.matches())
+                    paramsError("Permissions are in wrong format. \n E.g.: android.permission.INTERNET,android.permission.GET_TASKS");
+                permsToRem.add(p);
+            }
+        }
+        else {
+            paramsError("Missing perms");
+        }
+    }
+
+    private static void paramsError(String s) {
+        System.err.println(s);
+        printHelp();
+        System.exit(-1);
+    }
+
+    private static void printHelp() {
+        final String commandLineSyntax = "ciao";
+        final PrintWriter writer = new PrintWriter(System.err);
+        final HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp("rmperm", options);
+        writer.close();
+    }
 
 }
