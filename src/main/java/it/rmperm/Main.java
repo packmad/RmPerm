@@ -23,13 +23,14 @@ public class Main {
     public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; //TODO: infer from custom dex file
     public static final String zipAlignPath = "C:\\Program Files (x86)\\Android\\android-sdk\\build-tools\\21.1.2\\zipalign.exe"; //TODO: alt way
     public static final String jarSignerPath = "C:\\Program Files\\Java\\jdk1.8.0_45\\bin\\jarsigner"; //TODO: alt way
-    private static final String allMappings = System.getProperty("user.dir") + "\\files\\allMappings.txt";
+    private static final String allMappings = "C:\\Users\\Simone\\workspace\\rmperm\\files\\allMappings.txt"; //TODO: relative path
 
     private static HashSet<String> permsToRem = new HashSet<>(); // -p
     private static String akpPath; // -s
-    private static String outDir; // -d
-    private static String customDex; // -c
-
+    private static String outDir; // -d --d
+    private static String customDex; // -c --custom
+    private static boolean listPerms; // -l --list
+    public static boolean verboseOutput; // -v --verbose
 
     public static void main(String[] args) {
         parseCmdLine(args);
@@ -38,7 +39,7 @@ public class Main {
 
         try {
             FileUtils.deleteDirectory(new File(workingDir.toString()));
-            String[] apktoolCmd = {"d", "-s", akpPath, "-f", "-o", workingDir.toString()};
+            String[] apktoolCmd = {"d", "-s", "-f", "-s", akpPath, "-o", workingDir.toString()};
             brut.apktool.Main.main(apktoolCmd);
         } catch (IOException|InterruptedException|BrutException e) {
             e.printStackTrace();
@@ -49,7 +50,7 @@ public class Main {
         AllMethodsLoader allMethods = new AllMethodsLoader(allMappings);
 
         Path manifestPath = Paths.get(workingDir.toString(), "AndroidManifest.xml");
-        ManifestManager manifestManager = new ManifestManager(manifestPath.toString(), permsToRem);
+        ManifestManager manifestManager = new ManifestManager(manifestPath.toString(), permsToRem, listPerms);
 
         Customizer customizer = new Customizer(
                 allMethods.getPermissionToMethods(),
@@ -109,17 +110,19 @@ public class Main {
 
     private static void parseCmdLine(String[] args) {
         options.addOption("s", "src", true, "Apk source path")
-                .addOption("d", "dest", true, "Destination folder")
-                .addOption("c", "cust", true, "apk/dex with custom class/methods path")
-                .addOption("p", "perms", true, "CSV permissions list to remove");
-        CommandLine cmdline = null;
-        CommandLineParser parser = new GnuParser();
-        try {
-            cmdline = parser.parse(options, args);
-        } catch (ParseException exp) {
-            System.err.println("Error parsing command line: " + exp.getMessage());
-            printHelp();
-            System.exit(-1);
+                    .addOption("d", "dest", true, "Destination folder")
+                    .addOption("c", "cust", true, "apk/dex with custom class/methods path")
+                    .addOption("p", "perms", true, "CSV permissions list to remove")
+                    .addOption("l", "list", false, "Read and list the permissions in the manifest, then STOP the application")
+                    .addOption("v", "verbose", false, "Verbose output");
+            CommandLine cmdline = null;
+            CommandLineParser parser = new GnuParser();
+            try {
+                cmdline = parser.parse(options, args);
+            } catch (ParseException exp) {
+                System.err.println("Error parsing command line: " + exp.getMessage());
+                printHelp();
+                System.exit(-1);
         }
 
 
@@ -154,6 +157,10 @@ public class Main {
         else {
             paramsError("Missing perms");
         }
+        listPerms = cmdline.hasOption("l") || cmdline.hasOption("list");
+        if (listPerms)
+            System.out.println("With -l option the app will terminate after displaying the permissions!");
+        verboseOutput = cmdline.hasOption("v") || cmdline.hasOption("verbose");
     }
 
     private static void paramsError(String s) {

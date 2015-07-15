@@ -31,7 +31,7 @@ public class ManifestManager {
     private ArrayList<String> permsOriginal = new ArrayList<>();
     private HashSet<String> permsToRem;
 
-    public ManifestManager(String manifestPath, HashSet<String> permsToRem) {
+    public ManifestManager(String manifestPath, HashSet<String> permsToRem, boolean listPerms) {
         this.permsToRem = permsToRem;
         this.manifestPath = manifestPath;
         File xmlFile = new File(manifestPath);
@@ -56,6 +56,13 @@ public class ManifestManager {
         }
         for (String p : permsToRem)
             removePermission(p);
+
+        if (Main.verboseOutput || listPerms) {
+            System.out.println(this);
+        }
+        if (listPerms) {
+            System.exit(0);
+        }
         writeToFile();
     }
 
@@ -147,7 +154,7 @@ public class ManifestManager {
             }
         }
         else {
-            System.err.print("You are trying to remove a permission that doesn't exists in the original manifest: " + p);
+            System.err.println("You are trying to remove a permission that doesn't exists in the original manifest: " + p);
         }
     }
 

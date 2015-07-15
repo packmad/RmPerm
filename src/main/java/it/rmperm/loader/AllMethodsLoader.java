@@ -57,6 +57,7 @@ public class AllMethodsLoader {
             System.out.println("PermissionDB loaded '" + filePathPermissions + "' without errors.");
         }catch (IOException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
 
     }

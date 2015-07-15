@@ -176,7 +176,9 @@ public class Customizer {
                                         hackRef
                                 )
                         );
-                        System.out.println("REPLACED: " + tmpDM + " WITH: " + hackRef);
+                        if (Main.verboseOutput) {
+                            System.out.println("REPLACED: " + tmpDM + " WITH: " + hackRef);
+                        }
                     }
                     else if (contains(reducedPermToMethods, tmpDM)) {
                         System.err.println("MISSING: " + tmpDM);
