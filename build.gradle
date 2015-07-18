@@ -1,4 +1,4 @@
-group 'it.rmperm'
+    group 'it.rmperm'
 version '0.1-SNAPSHOT'
 
 apply plugin: 'java'

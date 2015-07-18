@@ -181,7 +181,14 @@ public class Customizer {
                         }
                     }
                     else if (contains(reducedPermToMethods, tmpDM)) {
-                        System.err.println("MISSING: " + tmpDM);
+                        String err = "MISSING: " + tmpDM;
+                        if (tmpDM.getReturnType().equals("V")) {
+                            mutableImplementation.removeInstruction(i--);
+                            err += "...but it's return type is void, so I removed it!";
+                            System.out.println(err);
+                        }
+                        else
+                            System.err.println(err);
                     }
                 }
             }

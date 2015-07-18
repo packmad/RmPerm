@@ -425,7 +425,7 @@ Permission:android.permission.ACCESS_NETWORK_STATE
 <android.net.ConnectivityManager: android.net.NetworkInfo getActiveNetworkInfo()>
 <android.net.ConnectivityManager: android.net.NetworkInfo[] getAllNetworkInfo()>
 <android.net.ConnectivityManager: int stopUsingNetworkFeature(int,java.lang.String)>
-<android.net.ConnectivityManager: int startUsingNetworkFeature(int,java.lang.String)>
+    <android.net.ConnectivityManager: int startUsingNetworkFeature(int,java.lang.String)>
 Permission:android.permission.REORDER_TASKS
 2 Callers:
 <android.app.ActivityManager: void moveTaskToFront(int,int)>

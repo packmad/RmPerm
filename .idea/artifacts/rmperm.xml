@@ -1,9 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="rmperm">
-    <output-path>$PROJECT_DIR$/out/artifacts/rmperm</output-path>
-    <root id="archive" name="rmperm.jar">
-      <element id="library" level="project" name="apktool-2.0.1-patched" />
-      <element id="module-output" name="rmperm" />
-    </root>
-  </artifact>
-</component>

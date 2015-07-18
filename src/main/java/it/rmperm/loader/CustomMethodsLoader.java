@@ -88,8 +88,7 @@ public class CustomMethodsLoader {
                             }
                         }
                         else {
-                            System.err.println("Wrong access flags in your method '" + method.getName() +"'");
-                            System.err.println("MUST BE public and static!");
+                            System.err.println("Wrong access flags in your method '" + method.getName() + "' it MUST BE public and static!");
                         }
                     }
 
