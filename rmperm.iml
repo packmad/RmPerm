@@ -17,9 +17,9 @@
     <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="module-library" exported="">
-      <library name="Gradle: apktool-2.0.1-patched">
+      <library name="Gradle: smali-2.0.7">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/apktool-2.0.1-patched.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/smali-2.0.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

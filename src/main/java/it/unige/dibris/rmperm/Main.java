@@ -1,18 +1,14 @@
 package it.unige.dibris.rmperm;
 
-import brut.common.BrutException;
-import it.unige.dibris.rmperm.loader.AllMethodsLoader;
-import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
+import it.unige.dibris.rmperm.loader.PermissionToMethodsParser;
+import it.unige.dibris.rmperm.meth.DexPermMethod;
 import org.apache.commons.cli.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +19,6 @@ public class Main {
     public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; //TODO: infer from custom dex file
     public static final String zipAlignPath = "C:\\Program Files (x86)\\Android\\android-sdk\\build-tools\\21.1.2\\zipalign.exe"; //TODO: alt way
     public static final String jarSignerPath = "C:\\Program Files\\Java\\jdk1.8.0_45\\bin\\jarsigner"; //TODO: alt way
-    private static final String allMappings = "C:\\Users\\Simone\\workspace\\rmperm\\files\\allMappings.txt"; //TODO: relative path
 
     private static HashSet<String> permsToRem = new HashSet<>(); // -p
     private static String akpPath; // -s
@@ -34,10 +29,11 @@ public class Main {
     public static boolean autoRemoveVoid = true; // -n --no-auto-remove-void
 
     public static void main(String[] args) {
-        parseCmdLine(args);
-        String apkName = FilenameUtils.getBaseName(akpPath);
-        workingDir = Paths.get(System.getProperty("java.io.tmpdir"), "rmperm", apkName);
+        //parseCmdLine(args);
+        //String apkName = ""; // FilenameUtils.getBaseName(akpPath);
+        //workingDir = Paths.get(System.getProperty("java.io.tmpdir"), "rmperm", apkName);
 
+        /*
         try {
             FileUtils.deleteDirectory(new File(workingDir.toString()));
             String[] apktoolCmd = {"d", "-s", "-f", "-s", akpPath, "-o", workingDir.toString()};
@@ -45,31 +41,39 @@ public class Main {
         } catch (IOException|InterruptedException|BrutException e) {
             e.printStackTrace();
             System.exit(-1);
+        }*/
+
+        //CustomMethodsLoader customMethods = new CustomMethodsLoader(Paths.get(customDex), customClassObj);
+        final Hashtable<String, List<DexPermMethod>> permissionToMethods;
+        try {
+            permissionToMethods = PermissionToMethodsParser.loadMapping();
+        } catch (IOException e) {
+            System.err.println("This is weird: there is something wrong with my permission-to-API resource");
+            return;
         }
 
-        CustomMethodsLoader customMethods = new CustomMethodsLoader(Paths.get(customDex), customClassObj);
-        AllMethodsLoader allMethods = new AllMethodsLoader(allMappings);
-
+        /*
         Path manifestPath = Paths.get(workingDir.toString(), "AndroidManifest.xml");
-        ManifestManager manifestManager = new ManifestManager(manifestPath.toString(), permsToRem, listPerms);
 
         Customizer customizer = new Customizer(
-                allMethods.getPermissionToMethods(),
+                permissionToMethods.getPermissionToMethods(),
                 customMethods.getPermissionToCustomMethods(),
                 customMethods.getCustomClasses(),
-                manifestManager.getPermsToRem(),
+                new HashSet<>(),
                 akpPath,
                 Paths.get(workingDir.toString(), "classes.dex"));
         customizer.doTheDirtyWork();
 
         Path newApkUnaligned = Paths.get(workingDir.toString(), "dist", apkName + "-unaligned.apk");
-        String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApkUnaligned.toString()};
+        */
+        /*String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApkUnaligned.toString()};
         try {
             brut.apktool.Main.main(apktoolCmd);
         } catch (IOException|InterruptedException|BrutException e) {
             e.printStackTrace();
             System.exit(-1);
-        }
+        }*/
+        /*
         System.out.println(newApkUnaligned.toString());
 
         Path newApkAligned = Paths.get(outDir, apkName + ".apk");
@@ -106,6 +110,7 @@ public class Main {
             e.printStackTrace();
         }
         System.out.println(newApkAligned.toString());
+        */
     }
 
 
@@ -172,11 +177,8 @@ public class Main {
     }
 
     private static void printHelp() {
-        final String commandLineSyntax = "ciao";
-        final PrintWriter writer = new PrintWriter(System.err);
         final HelpFormatter helpFormatter = new HelpFormatter();
         helpFormatter.printHelp("rmperm", options);
-        writer.close();
     }
 
 }
