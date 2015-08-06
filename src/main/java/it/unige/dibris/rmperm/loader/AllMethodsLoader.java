@@ -1,7 +1,7 @@
-package it.rmperm.loader;
+package it.unige.dibris.rmperm.loader;
 
-import it.rmperm.meth.AbstractDexMethod;
-import it.rmperm.meth.DexPermMethod;
+import it.unige.dibris.rmperm.meth.AbstractDexMethod;
+import it.unige.dibris.rmperm.meth.DexPermMethod;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -1,4 +1,4 @@
-package it.rmperm.meth;
+package it.unige.dibris.rmperm.meth;
 
 import javax.annotation.Nonnull;
 import java.util.List;

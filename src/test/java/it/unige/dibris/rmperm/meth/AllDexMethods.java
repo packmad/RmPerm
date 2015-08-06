@@ -1,4 +1,4 @@
-package it.rmperm.meth;
+package it.unige.dibris.rmperm.meth;
 
 import org.junit.Test;
 

@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: it.rmperm.Main
+Main-Class: it.unige.dibris.rmperm.Main
 

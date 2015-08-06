@@ -1,4 +1,4 @@
-package it.rmperm;
+package it.unige.dibris.rmperm;
 
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.iface.ClassDef;

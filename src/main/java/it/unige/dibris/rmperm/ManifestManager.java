@@ -1,4 +1,4 @@
-package it.rmperm;
+package it.unige.dibris.rmperm;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

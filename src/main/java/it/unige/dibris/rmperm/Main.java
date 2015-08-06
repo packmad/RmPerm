@@ -1,8 +1,8 @@
-package it.rmperm;
+package it.unige.dibris.rmperm;
 
 import brut.common.BrutException;
-import it.rmperm.loader.AllMethodsLoader;
-import it.rmperm.loader.CustomMethodsLoader;
+import it.unige.dibris.rmperm.loader.AllMethodsLoader;
+import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;

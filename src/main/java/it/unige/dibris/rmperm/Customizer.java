@@ -1,9 +1,9 @@
-package it.rmperm;
+package it.unige.dibris.rmperm;
 
 
-import it.rmperm.loader.CustomMethodsLoader;
-import it.rmperm.meth.DexMethod;
-import it.rmperm.meth.DexPermMethod;
+import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
+import it.unige.dibris.rmperm.meth.DexMethod;
+import it.unige.dibris.rmperm.meth.DexPermMethod;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.builder.BuilderInstruction;
