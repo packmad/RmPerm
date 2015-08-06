@@ -109,7 +109,7 @@ public abstract class AbstractDexMethod extends BaseMethodReference implements I
         return "DexMethod{" +
                 "defC='" + definingClass + '\'' +
                 ", name='" + name + '\'' +
-                ", parTs=" + parameterTypes +
+                ", parmsT=" + parameterTypes +
                 ", retT='" + returnType + '\'' +
                 '}';
     }

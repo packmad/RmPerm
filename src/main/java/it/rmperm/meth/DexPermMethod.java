@@ -54,7 +54,7 @@ public class DexPermMethod extends DexMethod {
                 "perm='" + getPermission() + '\'' +
                 ", defC='" + getDefiningClass() + '\'' +
                 ", name='" + getName() + '\'' +
-                ", parTs=" + getParameterTypes() +
+                ", parmsT=" + getParameterTypes() +
                 ", retT='" + getReturnType() + '\'' +
                 '}';
     }

@@ -31,6 +31,7 @@ public class Main {
     private static String customDex; // -c --custom
     private static boolean listPerms; // -l --list
     public static boolean verboseOutput; // -v --verbose
+    public static boolean autoRemoveVoid = true; // -n --no-auto-remove-void
 
     public static void main(String[] args) {
         parseCmdLine(args);
@@ -114,7 +115,8 @@ public class Main {
                     .addOption("c", "cust", true, "apk/dex with custom class/methods path")
                     .addOption("p", "perms", true, "CSV permissions list to remove")
                     .addOption("l", "list", false, "Read and list the permissions in the manifest, then STOP the application")
-                    .addOption("v", "verbose", false, "Verbose output");
+                    .addOption("v", "verbose", false, "Verbose output")
+                    .addOption("n", "no-auto-remove-void", false, "Disable the auto removal of void methods");
             CommandLine cmdline = null;
             CommandLineParser parser = new GnuParser();
             try {
@@ -157,10 +159,10 @@ public class Main {
         else {
             paramsError("Missing perms");
         }
-        listPerms = cmdline.hasOption("l") || cmdline.hasOption("list");
         if (listPerms)
             System.out.println("With -l option the app will terminate after displaying the permissions!");
         verboseOutput = cmdline.hasOption("v") || cmdline.hasOption("verbose");
+        autoRemoveVoid = !(cmdline.hasOption("n") || cmdline.hasOption("no-auto-remove-void"));
     }
 
     private static void paramsError(String s) {

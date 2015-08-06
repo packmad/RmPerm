@@ -182,7 +182,7 @@ public class Customizer {
                     }
                     else if (contains(reducedPermToMethods, tmpDM)) {
                         String err = "MISSING: " + tmpDM;
-                        if (tmpDM.getReturnType().equals("V")) {
+                        if (tmpDM.getReturnType().equals("V") && Main.autoRemoveVoid) {
                             mutableImplementation.removeInstruction(i--);
                             err += "...but it's return type is void, so I removed it!";
                             System.out.println(err);
