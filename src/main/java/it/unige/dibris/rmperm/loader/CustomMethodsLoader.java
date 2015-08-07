@@ -1,100 +1,145 @@
 package it.unige.dibris.rmperm.loader;
 
-import it.unige.dibris.rmperm.meth.AbstractDexMethod;
-import it.unige.dibris.rmperm.meth.DexPermMethod;
+import it.unige.dibris.rmperm.DexMethod;
+import it.unige.dibris.rmperm.MethodRedirection;
+import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.dexbacked.DexBackedAnnotationElement;
-import org.jf.dexlib2.dexbacked.DexBackedMethod;
 import org.jf.dexlib2.dexbacked.value.DexBackedStringEncodedValue;
 import org.jf.dexlib2.iface.*;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class CustomMethodsLoader {
-    public static final String prefixMethodConvention = "custom_";
-    private DexFile dexFile;
-    private String customClass;
-    private Hashtable<String, List<DexPermMethod>> permissionToCustomMethods = new Hashtable<>();
+    private static final String CUSTOM_METHOD_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/CustomMethodClass;";
+    private static final String METHOD_PERMISSION_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/MethodPermission;";
+    private static final String METHOD_ANNOTATION_PERMISSION_ELEMENT = "permission";
+    private static final String METHOD_ANNOTATION_DEFINING_CLASS_ELEMENT = "defClass";
 
-    /**
-     * @param definingFile dex or apk that contains the classes with custom methods
-     * @param customClass name of class with custom methods
-     */
-    public CustomMethodsLoader(Path definingFile, String customClass) {
-        File file = new File(definingFile.toUri());
-        try {
-            dexFile = DexFileFactory.loadDexFile(file, 19, false);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
+    private static class MethodAnnotationPair {
+        final Method method;
+        final Annotation annotation;
+
+        public MethodAnnotationPair(Method method, Annotation annotation) {
+            this.annotation = annotation;
+            this.method = method;
         }
-        this.customClass = customClass;
     }
 
+    private static class AnnotationElements {
+        final String definingClass;
+        final String permission;
 
-    public Hashtable<String, List<DexPermMethod>> getPermissionToCustomMethods() {
-        return permissionToCustomMethods;
+        public AnnotationElements(String definingClass, String permission) {
+            this.definingClass = definingClass;
+            this.permission = permission;
+        }
     }
 
-
-    public List<ClassDef> getCustomClasses() {
-        List<ClassDef> classList = new ArrayList<>();
-        for (ClassDef classDef : dexFile.getClasses()) {
-            if (classDef.toString().contains("HackClass")) { //TODO set convention
-                classList.add(classDef);
-                for (Method method : classDef.getMethods()) {
-                    if (method.getName().toString().contains(prefixMethodConvention)) {
-                        String perm, defClass;
-                        List<String> parms;
-                        perm = defClass = "";
-                        if (((DexBackedMethod) method).getAccessFlags() == 9) { // public static
-                            for (Annotation a : method.getAnnotations()) {
-                                Set<? extends AnnotationElement> annotationElements = a.getElements();
-                                if (annotationElements.size() == 2) {
-                                    for (AnnotationElement ae : annotationElements) {
-                                        String field = ae.getName();
-                                        String value = ((DexBackedStringEncodedValue) ((DexBackedAnnotationElement) ae).value).getValue();
-                                        // System.out.println(field + "->" + value);
-                                        if (field.equals("perm")) {
-                                            perm = value;
-                                        } else if (field.equals("defClass")) {
-                                            defClass = AbstractDexMethod.fromJavaTypeToDalvikType(value);
-                                        }
-                                    }
-                                    if (!permissionToCustomMethods.containsKey(perm)) {
-                                        permissionToCustomMethods.put(perm, new ArrayList<>());
-                                    }
-                                    parms = new ArrayList<>();
-                                    for (CharSequence cs : method.getParameterTypes()) {
-                                        parms.add(cs.toString());
-                                    }
-                                    if (!parms.isEmpty())
-                                        parms.remove(0); // original class containing the method
-                                    DexPermMethod tmpDpm = new DexPermMethod(
-                                            defClass,
-                                            method.getName().replace(prefixMethodConvention, ""), // remove the custom prefix
-                                            parms,
-                                            method.getReturnType(),
-                                            perm);
-                                    permissionToCustomMethods.get(perm).add(tmpDpm);
-                                    //System.out.println(tmpDpm);
-                                }
-                            }
-                        }
-                        else {
-                            System.err.println("Wrong access flags in your method '" + method.getName() + "' it MUST BE public and static!");
-                        }
-                    }
-
-                }
+    private static AnnotationElements extractElements(Annotation annotation) {
+        String definingClass = null;
+        String permission = null;
+        for (AnnotationElement element : annotation.getElements()) {
+            final String elementName = element.getName();
+            switch (elementName) {
+                case METHOD_ANNOTATION_PERMISSION_ELEMENT:
+                    permission = ((DexBackedStringEncodedValue) element.getValue()).getValue();
+                    break;
+                case METHOD_ANNOTATION_DEFINING_CLASS_ELEMENT:
+                    definingClass = DexMethod.fromJavaTypeToDalvikType(((DexBackedStringEncodedValue) element.getValue()).getValue());
+                    break;
+                default:
+                    assert false;
+                    break;
             }
         }
-        return classList;
+        assert permission != null && definingClass != null;
+        return new AnnotationElements(definingClass, permission);
     }
+
+    public static void load(String filename, Map<String, Set<MethodRedirection>> permissionToRedirections) throws IOException {
+        DexFile dexFile = DexFileFactory.loadDexFile(filename, 19, false);
+        Set<ClassDef> customMethodClasses = getAnnotatedClasses(dexFile);
+        for (MethodAnnotationPair methodAnnotationPair : getAnnotatedMethods(customMethodClasses)) {
+            Method method = methodAnnotationPair.method;
+            AnnotationElements elements = extractElements(methodAnnotationPair.annotation);
+            final String permission = elements.permission;
+            MethodRedirection redirection = createRedirection(method, elements.definingClass);
+            if (redirection!=null) {
+                System.out.println(redirection.toString());
+                if (!permissionToRedirections.containsKey(permission))
+                    permissionToRedirections.put(permission, new HashSet<>());
+                permissionToRedirections.get(permission).add(redirection);
+            }
+        }
+    }
+
+    private static MethodRedirection createRedirection(Method method, final String definingClass) {
+        final String methodName = method.getName();
+        final String fullMethodName = method.getDefiningClass() + "." + methodName;
+        final List<? extends CharSequence> parameterTypes = method.getParameterTypes();
+        if (parameterTypes.isEmpty()) {
+            PrintWarning("ignoring " + fullMethodName + " because its signature is missing the 'this' parameter");
+            return null;
+        }
+        String firstParameterType = parameterTypes.get(0).toString();
+        if (!firstParameterType.equals(definingClass)) {
+            PrintWarning("ignoring " + fullMethodName + " because its 'this' parameter has a wrong type");
+            return null;
+        }
+        final String returnType = method.getReturnType();
+        final DexMethod originalMethod = new DexMethod(definingClass, methodName, removeThisParam(parameterTypes), returnType);
+        final DexMethod newMethod = new DexMethod(method.getDefiningClass(), methodName, parameterTypes, returnType);
+        return new MethodRedirection(originalMethod, newMethod);
+    }
+
+    private static ArrayList<String> removeThisParam(List<? extends CharSequence> parameterTypes) {
+        ArrayList<String> result = new ArrayList<>();
+        for (CharSequence cs : parameterTypes)
+            result.add(cs.toString());
+        final int THIS_PARAM_INDEX = 0;
+        result.remove(THIS_PARAM_INDEX);
+        return result;
+    }
+
+    private static Set<MethodAnnotationPair> getAnnotatedMethods(Set<ClassDef> classes) {
+        Set<MethodAnnotationPair> result = new HashSet<>();
+        for (ClassDef classDef : classes)
+            for (Method method : classDef.getMethods())
+                for (Annotation a : method.getAnnotations()) {
+                    if (a.getType().equals(METHOD_PERMISSION_ANNOTATION)) {
+                        final int flags = method.getAccessFlags();
+                        boolean isPublic = AccessFlags.PUBLIC.isSet(flags);
+                        boolean isStatic = AccessFlags.STATIC.isSet(flags);
+                        if (isPublic && isStatic)
+                            result.add(new MethodAnnotationPair(method, a));
+                        else
+                            PrintWarning("ignoring method " + method.getDefiningClass() + "." + method.getName() + " because is not static and public");
+                        break;
+                    }
+                }
+        return result;
+    }
+
+
+    private static Set<ClassDef> getAnnotatedClasses(DexFile dexFile) {
+        Set<ClassDef> result = new HashSet<>();
+        for (ClassDef classDef : dexFile.getClasses())
+            for (Annotation a : classDef.getAnnotations()) {
+                if (a.getType().equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
+                    if (AccessFlags.PUBLIC.isSet(classDef.getAccessFlags()))
+                        result.add(classDef);
+                    else
+                        PrintWarning("ignoring class " + classDef + " because it is not public");
+                    break;
+                }
+            }
+        return result;
+    }
+
+    private static void PrintWarning(String msg) {
+        System.err.print("Warning: ");
+        System.err.println(msg);
+    }
+
 }

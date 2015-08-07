@@ -1,14 +1,12 @@
 package it.unige.dibris.rmperm;
 
+import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
 import it.unige.dibris.rmperm.loader.PermissionToMethodsParser;
-import it.unige.dibris.rmperm.meth.DexPermMethod;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,8 +41,15 @@ public class Main {
             System.exit(-1);
         }*/
 
-        //CustomMethodsLoader customMethods = new CustomMethodsLoader(Paths.get(customDex), customClassObj);
-        final Hashtable<String, List<DexPermMethod>> permissionToMethods;
+        Map<String, Set<MethodRedirection>> methodRedirections = new HashMap<>();
+        final String customClassesFilename = args[0];
+        try {
+            CustomMethodsLoader.load(customClassesFilename, methodRedirections);
+        } catch (IOException e) {
+            System.err.println("Cannot load custom classes from "+customClassesFilename);
+            return;
+        }
+        final Hashtable<String, List<DexMethod>> permissionToMethods;
         try {
             permissionToMethods = PermissionToMethodsParser.loadMapping();
         } catch (IOException e) {

@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm.meth;
+package it.unige.dibris.rmperm;
 
 import org.jf.dexlib2.base.reference.BaseMethodReference;
 
@@ -6,13 +6,13 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractDexMethod extends BaseMethodReference implements IDexMethod {
+public class DexMethod extends BaseMethodReference {
     private String definingClass;
     private String name;
-    private List<String> parameterTypes;
+    private List<? extends CharSequence> parameterTypes;
     private String returnType;
 
-    public AbstractDexMethod(String definingClass, String name, List<String> parameterTypes, String returnType) {
+    public DexMethod(String definingClass, String name, List<? extends CharSequence> parameterTypes, String returnType) {
         this.definingClass = definingClass;
         this.name = name;
         this.parameterTypes = parameterTypes;
@@ -80,38 +80,8 @@ public abstract class AbstractDexMethod extends BaseMethodReference implements I
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AbstractDexMethod)) return false;
-        if (!super.equals(o)) return false;
-
-        AbstractDexMethod that = (AbstractDexMethod) o;
-
-        if (!getDefiningClass().equals(that.getDefiningClass())) return false;
-        if (!getName().equals(that.getName())) return false;
-        if (!getParameterTypes().equals(that.getParameterTypes())) return false;
-        return getReturnType().equals(that.getReturnType());
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + getDefiningClass().hashCode();
-        result = 31 * result + getName().hashCode();
-        result = 31 * result + getParameterTypes().hashCode();
-        result = 31 * result + getReturnType().hashCode();
-        return result;
-    }
-
-    @Override
     public String toString() {
-        return "DexMethod{" +
-                "defC='" + definingClass + '\'' +
-                ", name='" + name + '\'' +
-                ", parmsT=" + parameterTypes +
-                ", retT='" + returnType + '\'' +
-                '}';
+        return  returnType + ' ' +definingClass + '.' + name + '(' + parameterTypes + ")";
     }
 
 }

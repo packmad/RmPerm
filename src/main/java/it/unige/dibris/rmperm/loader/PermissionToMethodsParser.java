@@ -1,7 +1,6 @@
 package it.unige.dibris.rmperm.loader;
 
-import it.unige.dibris.rmperm.meth.AbstractDexMethod;
-import it.unige.dibris.rmperm.meth.DexPermMethod;
+import it.unige.dibris.rmperm.DexMethod;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,8 +17,8 @@ public class PermissionToMethodsParser {
     private static final Pattern permPattern = Pattern.compile("^Permission:(android.permission.[A-Z_]*)$");
     private static final Pattern methodPattern = Pattern.compile("<(?<defClass>(?:\\w|\\.)+): (?<retType>(?:\\w|\\.)+) (?<name>(?:\\w|\\.)+)\\((?<params>[^)]*)\\)>.*");
 
-    public static Hashtable<String, List<DexPermMethod>> loadMapping() throws IOException {
-        final Hashtable<String, List<DexPermMethod>> permissionToMethods = new Hashtable<>();
+    public static Hashtable<String, List<DexMethod>> loadMapping() throws IOException {
+        final Hashtable<String, List<DexMethod>> permissionToMethods = new Hashtable<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(PermissionToMethodsParser.class.getResourceAsStream("/jellybean_publishedapimapping")));
         String line;
         String permission = null;
@@ -32,33 +31,17 @@ public class PermissionToMethodsParser {
             } else {
                 Matcher methodMatcher = methodPattern.matcher(line);
                 if (methodMatcher.matches()) {
-                    String definingClass = AbstractDexMethod.fromJavaTypeToDalvikType(methodMatcher.group("defClass"));
-                    String returnType = AbstractDexMethod.fromJavaTypeToDalvikType(methodMatcher.group("retType"));
+                    String definingClass = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group("defClass"));
+                    String returnType = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group("retType"));
                     String name = methodMatcher.group("name");
-                    List<String> params = AbstractDexMethod.parseAndConvertIntoDalvikTypes(methodMatcher.group("params"));
-                    DexPermMethod dm = new DexPermMethod(definingClass, name, params, returnType, permission);
+                    List<String> params = DexMethod.parseAndConvertIntoDalvikTypes(methodMatcher.group("params"));
+                    DexMethod dm = new DexMethod(definingClass, name, params, returnType);
+                    assert permission!=null;
                     permissionToMethods.get(permission).add(dm);
                 }
             }
         }
         return permissionToMethods;
     }
-
-    /**
-     * Given a DexPermMethod (without its permission) search and return the same DexPermMethod with its permission.
-     *
-     * @param dexPermMethod
-     * @return the founded DexPermMethod , null otherwise
-    public DexPermMethod getContain(DexPermMethod dexPermMethod) {
-        for (List<DexPermMethod> dml : permissionToMethods.values()) {
-            for (DexPermMethod dm : dml) {
-                if (dm.equals(dexPermMethod)) { // equals on DexPermMethod doesn't matter about permission info
-                    return dm;
-                }
-            }
-        }
-        return null;
-    }
-     */
 
 }

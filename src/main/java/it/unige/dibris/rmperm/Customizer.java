@@ -1,9 +1,6 @@
 package it.unige.dibris.rmperm;
 
 
-import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
-import it.unige.dibris.rmperm.meth.DexMethod;
-import it.unige.dibris.rmperm.meth.DexPermMethod;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.builder.BuilderInstruction;
@@ -29,8 +26,8 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class Customizer {
-    private final Hashtable<String, List<DexPermMethod>> reducedPermToMethods = new Hashtable<>();
-    private final Hashtable<String, List<DexPermMethod>> reducedPermToCustomMethods = new Hashtable<>();
+    private final Hashtable<String, List<DexMethod>> reducedPermToMethods = new Hashtable<>();
+    private final Hashtable<String, List<DexMethod>> reducedPermToCustomMethods = new Hashtable<>();
     //private final HashSet<String> removedPerms;
     private final List<ClassDef> customClasses;
     private final File file;
@@ -38,8 +35,8 @@ public class Customizer {
 
 
     public Customizer(
-            Hashtable<String, List<DexPermMethod>> permissionToMethods,
-            Hashtable<String, List<DexPermMethod>> permissionToCustomMethods,
+            Hashtable<String, List<DexMethod>> permissionToMethods,
+            Hashtable<String, List<DexMethod>> permissionToCustomMethods,
             List<ClassDef> customClasses,
             HashSet<String> removedPerms,
             String src,
@@ -131,8 +128,8 @@ public class Customizer {
     }
 
 
-    private boolean contains(Hashtable<String, List<DexPermMethod>> ht, DexMethod dm) {
-        for (List<DexPermMethod> dpmList : ht.values())
+    private boolean contains(Hashtable<String, List<DexMethod>> ht, DexMethod dm) {
+        for (List<DexMethod> dpmList : ht.values())
         {
             if (dpmList.contains(dm))
                 return true;
@@ -151,6 +148,7 @@ public class Customizer {
                 Reference r = bi35c.getReference();
                 if (r instanceof DexBackedMethodReference) {
                     DexBackedMethodReference dmbr = (DexBackedMethodReference) r;
+                    /*
                     DexMethod tmpDM = new DexMethod(dmbr.getDefiningClass(), dmbr.getName(), dmbr.getParameterTypes(), dmbr.getReturnType());
 
                     if (contains(reducedPermToCustomMethods, tmpDM)) { // this call must be replaced
@@ -189,7 +187,8 @@ public class Customizer {
                         }
                         else
                             System.err.println(err);
-                    }
+                    }*/
+
                 }
             }
         }
