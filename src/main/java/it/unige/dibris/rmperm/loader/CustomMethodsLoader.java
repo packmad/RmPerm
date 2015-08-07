@@ -66,7 +66,7 @@ public class CustomMethodsLoader {
             final String permission = elements.permission;
             MethodRedirection redirection = createRedirection(method, elements.definingClass);
             if (redirection!=null) {
-                System.out.println(redirection.toString());
+                //System.out.println(redirection.toString());
                 if (!permissionToRedirections.containsKey(permission))
                     permissionToRedirections.put(permission, new HashSet<>());
                 permissionToRedirections.get(permission).add(redirection);

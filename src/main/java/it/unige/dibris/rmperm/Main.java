@@ -2,6 +2,7 @@ package it.unige.dibris.rmperm;
 
 import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
 import it.unige.dibris.rmperm.loader.PermissionToMethodsParser;
+import it.unige.dibris.rmperm.manifest.AndroidManifestUtils;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -10,43 +11,50 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class Main {
-    private static final Options options = new Options();
-    public static Path workingDir;
-    public static final String customClassObj = "Lhack/aonzo/simone/emptyappwithhackclass/HackClass;"; //TODO: infer from custom dex file
-    public static final String zipAlignPath = "C:\\Program Files (x86)\\Android\\android-sdk\\build-tools\\21.1.2\\zipalign.exe"; //TODO: alt way
-    public static final String jarSignerPath = "C:\\Program Files\\Java\\jdk1.8.0_45\\bin\\jarsigner"; //TODO: alt way
-
-    private static HashSet<String> permsToRem = new HashSet<>(); // -p
-    private static String akpPath; // -s
-    private static String outDir; // -d --d
-    private static String customDex; // -c --custom
-    private static boolean listPerms; // -l --list
-    public static boolean verboseOutput; // -v --verbose
-    public static boolean autoRemoveVoid = true; // -n --no-auto-remove-void
+    private static final String OPTION_REMOVE = "remove";
+    private static final String OPTION_LIST = "list";
+    private static final String OPTION_SOURCE = "source";
+    private static final String OPTION_VERBOSE = "verbose";
+    private static final String OPTION_CUSTOM_METHODS = "custom-methods";
+    private static final String OPTION_OUTPUT = "output-apk";
+    private static final String OPTION_PERMISSIONS = "permissions";
+    private static final String OPTION_HELP = "help";
 
     public static void main(String[] args) {
-        //parseCmdLine(args);
-        //String apkName = ""; // FilenameUtils.getBaseName(akpPath);
-        //workingDir = Paths.get(System.getProperty("java.io.tmpdir"), "rmperm", apkName);
+        CommandLine cmdLine = parseCmdLine(args);
+        if (cmdLine == null)
+            return;
 
-        /*
-        try {
-            FileUtils.deleteDirectory(new File(workingDir.toString()));
-            String[] apktoolCmd = {"d", "-s", "-f", "-s", akpPath, "-o", workingDir.toString()};
-            brut.apktool.Main.main(apktoolCmd);
-        } catch (IOException|InterruptedException|BrutException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }*/
+        String sourceApkFilename = cmdLine.getOptionValue(OPTION_SOURCE);
+        boolean verboseOutput = cmdLine.hasOption(OPTION_VERBOSE);
+        if (cmdLine.hasOption(OPTION_LIST)) {
+            listPermissions(sourceApkFilename, verboseOutput);
+            return;
+        }
+        assert cmdLine.hasOption(OPTION_REMOVE);
+        removePermissions(sourceApkFilename, verboseOutput, cmdLine);
+    }
 
+    private static void removePermissions(String sourceApkFilename, boolean verboseOutput, CommandLine cmdLine) {
+        String outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
+        String customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
+        String csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
+        if (outApkFilename==null || customMethodsFilename==null || csvPermissionsToRemove==null) {
+            System.err.println("Arguments "+OPTION_OUTPUT+", "+OPTION_CUSTOM_METHODS+", "+OPTION_PERMISSIONS+
+                " are required when using "+OPTION_REMOVE);
+            return;
+        }
+        System.out.println("sourceApkFilename="+sourceApkFilename);
+        System.out.println("verboseOutput="+verboseOutput);
+        System.out.println("outApkFilename="+outApkFilename);
+        System.out.println("customMethodsFilename="+customMethodsFilename);
+        System.out.println("csvPermissionsToRemove="+csvPermissionsToRemove);
         Map<String, Set<MethodRedirection>> methodRedirections = new HashMap<>();
-        final String customClassesFilename = args[0];
         try {
-            CustomMethodsLoader.load(customClassesFilename, methodRedirections);
+            CustomMethodsLoader.load(customMethodsFilename, methodRedirections);
         } catch (IOException e) {
-            System.err.println("Cannot load custom classes from "+customClassesFilename);
+            System.err.println("Cannot load custom methods from "+customMethodsFilename);
             return;
         }
         final Hashtable<String, List<DexMethod>> permissionToMethods;
@@ -56,134 +64,71 @@ public class Main {
             System.err.println("This is weird: there is something wrong with my permission-to-API resource");
             return;
         }
+        System.out.println("Not implemented (yet)!");
+    }
 
-        /*
-        Path manifestPath = Paths.get(workingDir.toString(), "AndroidManifest.xml");
-
-        Customizer customizer = new Customizer(
-                permissionToMethods.getPermissionToMethods(),
-                customMethods.getPermissionToCustomMethods(),
-                customMethods.getCustomClasses(),
-                new HashSet<>(),
-                akpPath,
-                Paths.get(workingDir.toString(), "classes.dex"));
-        customizer.doTheDirtyWork();
-
-        Path newApkUnaligned = Paths.get(workingDir.toString(), "dist", apkName + "-unaligned.apk");
-        */
-        /*String[] apktoolCmd = new String[] {"b", workingDir.toString(), "-o", newApkUnaligned.toString()};
+    private static void listPermissions(String sourceApkFilename, boolean verboseOutput) {
         try {
-            brut.apktool.Main.main(apktoolCmd);
-        } catch (IOException|InterruptedException|BrutException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }*/
-        /*
-        System.out.println(newApkUnaligned.toString());
-
-        Path newApkAligned = Paths.get(outDir, apkName + ".apk");
-
-        //TODO: zipalign and sign programmatically
-        try {
-            ProcessBuilder pb = new ProcessBuilder(
-                    zipAlignPath,
-                    "-f",
-                    "-v", "4",
-                    newApkUnaligned.toString(),
-                    newApkAligned.toString()
-                );
-            pb.inheritIO();
-            Process p = pb.start();
-            p.waitFor();
-            pb = new ProcessBuilder(
-                    jarSignerPath,
-                    "-verbose",
-                    "-sigalg", "SHA1withRSA",
-                    "-digestalg", "SHA1",
-                    "-keystore", "C:\\Users\\Simone\\.android\\debug.keystore",
-                    newApkAligned.toString(),
-                    "androiddebugkey",
-                    "-storepass", "android"
-            );
-            pb.inheritIO();
-            p = pb.start();
-            p.waitFor();
+            AndroidManifestUtils.printPermissions(sourceApkFilename);
         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.out.println("I/O error: " + e.getMessage());
         }
-        System.out.println(newApkAligned.toString());
-        */
     }
 
-
-    private static void parseCmdLine(String[] args) {
-        options.addOption("s", "src", true, "Apk source path")
-                    .addOption("d", "dest", true, "Destination folder")
-                    .addOption("c", "cust", true, "apk/dex with custom class/methods path")
-                    .addOption("p", "perms", true, "CSV permissions list to remove")
-                    .addOption("l", "list", false, "Read and list the permissions in the manifest, then STOP the application")
-                    .addOption("v", "verbose", false, "Verbose output")
-                    .addOption("n", "no-auto-remove-void", false, "Disable the auto removal of void methods");
-            CommandLine cmdline = null;
-            CommandLineParser parser = new GnuParser();
-            try {
-                cmdline = parser.parse(options, args);
-            } catch (ParseException exp) {
-                System.err.println("Error parsing command line: " + exp.getMessage());
-                printHelp();
-                System.exit(-1);
+    private static CommandLine parseCmdLine(String[] args) {
+        Option r = new Option(OPTION_REMOVE.substring(0, 1), "Remove permissions");
+        r.setLongOpt(OPTION_REMOVE);
+        Option l = new Option(OPTION_LIST.substring(0, 1), "List permissions");
+        l.setLongOpt(OPTION_LIST);
+        OptionGroup g = new OptionGroup();
+        g.addOption(r)
+         .addOption(l)
+         .setRequired(true);
+        Option s = new Option(OPTION_SOURCE.substring(0, 1), "Specifies the source APK file");
+        s.setArgs(1);
+        s.setArgName("APK-filename");
+        s.setLongOpt(OPTION_SOURCE);
+        s.setRequired(true);
+        Option v = new Option(OPTION_VERBOSE.substring(0, 1), "Verbose output");
+        v.setLongOpt(OPTION_VERBOSE);
+        Option h = new Option(OPTION_HELP.substring(0, 1), "Print this help");
+        h.setLongOpt(OPTION_HELP);
+        Option n = new Option("n", "Disable the auto removal of void methods");
+        n.setLongOpt("no-auto-remove-void");
+        Option c = new Option(OPTION_CUSTOM_METHODS.substring(0, 1), "Source APK filename");
+        c.setArgs(1);
+        c.setArgName("APK/DEX-filename");
+        c.setLongOpt(OPTION_CUSTOM_METHODS);
+        Option o = new Option(OPTION_OUTPUT.substring(0, 1), "Output APK filename");
+        o.setArgs(1);
+        o.setArgName("APK-filename");
+        o.setLongOpt(OPTION_OUTPUT);
+        Option p = new Option(OPTION_PERMISSIONS.substring(0, 1), "Permissions to remove");
+        p.setArgs(1);
+        p.setArgName("CSV permission names");
+        p.setLongOpt(OPTION_PERMISSIONS);
+        final Options options = new Options();
+        options.addOptionGroup(g)
+               .addOption(h)
+               .addOption(v)
+               .addOption(s)
+               .addOption(c)
+               .addOption(o)
+               .addOption(p);
+        CommandLine cmdline = null;
+        boolean parsingError = false;
+        try {
+            cmdline = new GnuParser().parse(options, args);
+        } catch (ParseException exp) {
+            System.err.println(exp.getMessage());
+            parsingError = true;
         }
-
-
-        if (cmdline.hasOption("s") || cmdline.hasOption("src")) {
-            akpPath = cmdline.getOptionValue("s");
+        if (parsingError || cmdline.hasOption(OPTION_HELP)) {
+            final HelpFormatter helpFormatter = new HelpFormatter();
+            helpFormatter.printHelp("rmperm", options, true);
+            return null;
         }
-        else {
-            paramsError("Missing src");
-        }
-        if (cmdline.hasOption("d") || cmdline.hasOption("dest")) {
-            outDir = cmdline.getOptionValue("d");
-        }
-        else {
-            paramsError("Missing dest");
-        }
-        if (cmdline.hasOption("c") || cmdline.hasOption("cust")) {
-            customDex = cmdline.getOptionValue("c");
-        }
-        else {
-            paramsError("Missing cust");
-        }
-        if (cmdline.hasOption("p") || cmdline.hasOption("perms")) {
-            Pattern permPattern = Pattern.compile("^android.permission.[A-Z_]*$");
-            String[] perms = cmdline.getOptionValue("p").split(",");
-            for(String p : perms) {
-                Matcher permMatcher = permPattern.matcher(p);
-                if (!permMatcher.matches())
-                    paramsError("Permissions are in wrong format. \n E.g.: android.permission.INTERNET,android.permission.GET_TASKS");
-                permsToRem.add(p);
-            }
-        }
-        else {
-            paramsError("Missing perms");
-        }
-        if (listPerms)
-            System.out.println("With -l option the app will terminate after displaying the permissions!");
-        verboseOutput = cmdline.hasOption("v") || cmdline.hasOption("verbose");
-        autoRemoveVoid = !(cmdline.hasOption("n") || cmdline.hasOption("no-auto-remove-void"));
-    }
-
-    private static void paramsError(String s) {
-        System.err.println(s);
-        printHelp();
-        System.exit(-1);
-    }
-
-    private static void printHelp() {
-        final HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("rmperm", options);
+        return cmdline;
     }
 
 }
