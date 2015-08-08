@@ -4,12 +4,8 @@ import it.unige.dibris.rmperm.IOutput;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class AndroidManifestUtils {
     private final IOutput out;
@@ -40,10 +36,13 @@ public class AndroidManifestUtils {
         out.printf(IOutput.Level.NORMAL, "Permissions of %s:\n", apkFilename);
         for (String p : permissions)
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
-        out.printf(IOutput.Level.NORMAL, "\nTo remove all of them you can pass rmperm the parameters:\n-r -s %s -p %s\n", apkFilename, String.join(",", permissions));
+        out.printf(IOutput.Level.NORMAL,
+                   "\nTo remove all of them you can pass rmperm the parameters:\n-r -s %s -p %s\n",
+                   apkFilename,
+                   String.join(",", permissions));
     }
 
-    public static AndroidManifest extractManifest(final String apkFilename) throws IOException {
+    public AndroidManifest extractManifest(final String apkFilename) throws IOException {
         final File tmpManifestFile = extractManifestToTemporaryFile(apkFilename);
         try {
             return new AndroidManifest(tmpManifestFile);
@@ -52,7 +51,7 @@ public class AndroidManifestUtils {
         }
     }
 
-    private static File extractManifestToTemporaryFile(final String apkFilename) throws IOException {
+    File extractManifestToTemporaryFile(final String apkFilename) throws IOException {
         final File tmpManifestFile = File.createTempFile("AndroidManifest", null);
         tmpManifestFile.deleteOnExit();
         JarFile jf = new JarFile(apkFilename);
@@ -62,13 +61,13 @@ public class AndroidManifestUtils {
         return tmpManifestFile;
     }
 
-    private static void copyAndClose(InputStream is, OutputStream os) throws IOException {
+    void copyAndClose(InputStream is, OutputStream os) throws IOException {
         copy(is, os);
         is.close();
         os.close();
     }
 
-    private static void copy(InputStream is, OutputStream os) throws IOException {
+    public void copy(InputStream is, OutputStream os) throws IOException {
         final byte[] buf = new byte[512];
         int nRead;
         while ((nRead = is.read(buf)) != -1) {
@@ -76,41 +75,4 @@ public class AndroidManifestUtils {
         }
     }
 
-    public void removePermissions(String apkInFilename, String apkOutFilename, String... permissionsToRemove) throws IOException {
-        AndroidManifest manifest = extractManifest(apkInFilename);
-        for (String permission : permissionsToRemove) {
-            boolean result = manifest.tryToRemovePermission(permission);
-            if (!result)
-                out.printf(IOutput.Level.ERROR, "Couldn't remove %s\n", permission);
-        }
-        final File tmpManifestFile = File.createTempFile("AndroidManifest", null);
-        tmpManifestFile.deleteOnExit();
-        try {
-            manifest.write(tmpManifestFile);
-            out.printf(IOutput.Level.NORMAL, "Rewriting from %s to %s\n\n", apkInFilename, apkOutFilename);
-            JarFile inputJar = new JarFile(apkInFilename);
-            ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(apkOutFilename));
-            Enumeration<JarEntry> entries = inputJar.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                final String name = entry.getName();
-                if (name.equalsIgnoreCase("META-INF/MANIFEST.MF"))
-                    continue;
-                outputJar.putNextEntry(new ZipEntry(name));
-                if (name.equalsIgnoreCase("AndroidManifest.xml")) {
-                    FileInputStream newManifest = new FileInputStream(tmpManifestFile);
-                    copy(newManifest, outputJar);
-                    newManifest.close();
-                } else {
-                    final InputStream entryInputStream = inputJar.getInputStream(entry);
-                    copy(entryInputStream, outputJar);
-                    entryInputStream.close();
-                }
-                outputJar.closeEntry();
-            }
-            outputJar.close();
-        } finally {
-            tmpManifestFile.delete();
-        }
-    }
 }

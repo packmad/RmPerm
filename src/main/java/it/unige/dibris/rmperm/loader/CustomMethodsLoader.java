@@ -64,7 +64,11 @@ public class CustomMethodsLoader {
         return new AnnotationElements(definingClass, permission);
     }
 
-    public void load(String filename, List<ClassDef> customClasses, Map<MethodReference, MethodReference> redirections, Set<String> permissionToRemove) throws IOException {
+    public void load(String filename,
+                     List<ClassDef> customClasses,
+                     Map<MethodReference, MethodReference> redirections,
+                     Set<String> permissionToRemove
+    ) throws IOException {
         out.printf(IOutput.Level.VERBOSE, "Loading custom methods from %s\n", filename);
         DexFile dexFile = DexFileFactory.loadDexFile(filename, 19, false);
         Set<ClassDef> customMethodClasses = getAnnotatedClasses(dexFile);
@@ -87,13 +91,24 @@ public class CustomMethodsLoader {
                 continue;
             }
             final String returnType = method.getReturnType();
-            final DexMethod originalMethod = new DexMethod(definingClass, methodName, removeThisParam(parameterTypes), returnType);
-            final DexMethod newMethod = new DexMethod(method.getDefiningClass(), methodName, parameterTypes, returnType);
+            final DexMethod originalMethod = new DexMethod(definingClass,
+                                                           methodName,
+                                                           removeThisParam(parameterTypes),
+                                                           returnType);
+            final DexMethod newMethod = new DexMethod(method.getDefiningClass(),
+                                                      methodName,
+                                                      parameterTypes,
+                                                      returnType);
             if (!permissionToRemove.contains(permission)) {
-                //out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s--->%s\n", permission, originalMethod, newMethod);
+                //out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s--->%s\n", permission, originalMethod,
+                // newMethod);
                 continue;
             }
-            out.printf(IOutput.Level.DEBUG, "[%s] Adding redirection: %s--->%s\n", permission, originalMethod, newMethod);
+            out.printf(IOutput.Level.DEBUG,
+                       "[%s] Adding redirection: %s--->%s\n",
+                       permission,
+                       originalMethod,
+                       newMethod);
             redirections.put(originalMethod, newMethod);
         }
         out.printf(IOutput.Level.DEBUG, "Loaded custom methods from %s\n", filename);
@@ -121,7 +136,8 @@ public class CustomMethodsLoader {
                         if (isPublic && isStatic)
                             result.add(new MethodAnnotationPair(method, a));
                         else
-                            PrintWarning("ignoring method " + method.getDefiningClass() + "." + method.getName() + " because is not static and public");
+                            PrintWarning("ignoring method " + method.getDefiningClass() + "." + method.getName() + " " +
+                                                 "because is not static and public");
                         break;
                     }
                 }

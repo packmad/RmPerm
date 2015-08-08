@@ -46,8 +46,9 @@ public class AndroidManifest {
                 this.chunks.add(startElement);
             } else if (chunkHeader.type == RES_XML_END_ELEMENT_TYPE) {
                 ResXmlEndElement endElement = new ResXmlEndElement(chunkHeader, src);
-                assert current!=null;
-                assert current.name.lookup().equals(endElement.name.lookup());
+                assert current != null;
+                assert current.name.lookup()
+                                   .equals(endElement.name.lookup());
                 current.setEndElement(endElement);
                 current = parents.pop();
                 this.chunks.add(endElement);
@@ -156,7 +157,12 @@ public class AndroidManifest {
                     '}';
         }
 
-        public void writeTo(ResTarget tgt, int newStringCount, int newStringsStart, int stylesStart, int length) throws IOException {
+        public void writeTo(ResTarget tgt,
+                            int newStringCount,
+                            int newStringsStart,
+                            int stylesStart,
+                            int length
+        ) throws IOException {
             header.writeTo(tgt, length + 5 * ResTarget.LEN_U32);
             tgt.writeU32(newStringCount);
             tgt.writeU32(styleCount);
@@ -173,12 +179,17 @@ public class AndroidManifest {
         private final byte[] stylesData;
 
         public void writeTo(ResTarget tgt) throws IOException {
-            int stringsStart = header.header.headerSize + strings.size() * ResTarget.LEN_U32 + styleOffsets.length * ResTarget.LEN_U32;
+            int stringsStart = header.header.headerSize + strings.size() * ResTarget.LEN_U32
+                                + styleOffsets.length * ResTarget.LEN_U32;
             int stylesStart = stringsStart;
             for (String st : strings)
                 stylesStart += (2 + st.length()) * 2;
             int length = stylesStart + stylesData.length;
-            header.writeTo(tgt, strings.size(), stringsStart, header.stylesStart > 0 ? stylesStart : 0, length - header.header.headerSize);
+            header.writeTo(tgt,
+                           strings.size(),
+                           stringsStart,
+                           header.stylesStart > 0 ? stylesStart : 0,
+                           length - header.header.headerSize);
             int pos = 0;
             for (final String st : strings) {
                 tgt.writeU32(pos);
@@ -220,7 +231,8 @@ public class AndroidManifest {
                 if (size > 32767)
                     size = (size & 0x7fff) << 16 + src.readU16();
                 char[] c = new char[size];
-                src.asCharBuffer().get(c);
+                src.asCharBuffer()
+                   .get(c);
                 this.strings.add(String.valueOf(c));
             }
             if (header.styleCount > 0) {
@@ -433,7 +445,8 @@ public class AndroidManifest {
 
         public void remove() {
             assert this.endElement != null;
-            assert this.name.lookup().equals(this.endElement.name.lookup());
+            assert this.name.lookup()
+                            .equals(this.endElement.name.lookup());
             AndroidManifest.this.chunks.remove(this);
             AndroidManifest.this.chunks.remove(this.endElement);
         }
@@ -464,7 +477,8 @@ public class AndroidManifest {
             this.classAttributeIndex = src.readU16();
             this.styleAttributeIndex = src.readU16();
 
-            final boolean isPermission = this.name.lookup().equalsIgnoreCase("uses-permission");
+            final boolean isPermission = this.name.lookup()
+                                                  .equalsIgnoreCase("uses-permission");
             this.attributes = new ResXmlAttribute[this.attributeCount];
             for (int i = 0; i < this.attributeCount; i++) {
                 final ResXmlAttribute attribute = new ResXmlAttribute(src);

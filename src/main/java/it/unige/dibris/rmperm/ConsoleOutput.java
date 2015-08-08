@@ -1,7 +1,7 @@
 package it.unige.dibris.rmperm;
 
 public class ConsoleOutput implements IOutput {
-    final Level level;
+    private final Level level;
 
     public ConsoleOutput(Level level) {
         this.level = level;

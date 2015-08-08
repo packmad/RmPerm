@@ -7,12 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DexMethod extends BaseMethodReference {
-    private String definingClass;
-    private String name;
-    private List<? extends CharSequence> parameterTypes;
-    private String returnType;
+    private final String definingClass;
+    private final String name;
+    private final List<? extends CharSequence> parameterTypes;
+    private final String returnType;
 
-    public DexMethod(String definingClass, String name, List<? extends CharSequence> parameterTypes, String returnType) {
+    public DexMethod(String definingClass,
+                     String name,
+                     List<? extends CharSequence> parameterTypes,
+                     String returnType
+    ) {
         this.definingClass = definingClass;
         this.name = name;
         this.parameterTypes = parameterTypes;
@@ -44,7 +48,7 @@ public class DexMethod extends BaseMethodReference {
     }
 
     public static List<String> parseAndConvertIntoDalvikTypes(String csvParams) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         String[] params = csvParams.split(",");
         for (String s : params) {
             if (!s.equals(""))
@@ -81,7 +85,7 @@ public class DexMethod extends BaseMethodReference {
 
     @Override
     public String toString() {
-        return  returnType + ' ' +definingClass + '.' + name + '(' + parameterTypes + ")";
+        return returnType + ' ' + definingClass + '.' + name + '(' + parameterTypes + ")";
     }
 
 }
