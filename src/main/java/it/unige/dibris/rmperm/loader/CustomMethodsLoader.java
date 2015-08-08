@@ -1,6 +1,7 @@
 package it.unige.dibris.rmperm.loader;
 
 import it.unige.dibris.rmperm.DexMethod;
+import it.unige.dibris.rmperm.IOutput;
 import it.unige.dibris.rmperm.MethodRedirection;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
@@ -15,6 +16,12 @@ public class CustomMethodsLoader {
     private static final String METHOD_PERMISSION_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/MethodPermission;";
     private static final String METHOD_ANNOTATION_PERMISSION_ELEMENT = "permission";
     private static final String METHOD_ANNOTATION_DEFINING_CLASS_ELEMENT = "defClass";
+
+    private final IOutput out;
+
+    public CustomMethodsLoader(IOutput out) {
+        this.out = out;
+    }
 
     private static class MethodAnnotationPair {
         final Method method;
@@ -57,24 +64,31 @@ public class CustomMethodsLoader {
         return new AnnotationElements(definingClass, permission);
     }
 
-    public static void load(String filename, Map<String, Set<MethodRedirection>> permissionToRedirections) throws IOException {
+    public void load(String filename, List<ClassDef> customClasses, Map<String, Set<MethodRedirection>> permissionToRedirections, Set<String> permissionToRemove) throws IOException {
+        out.printf(IOutput.Level.VERBOSE, "Loading custom methods from %s\n", filename);
         DexFile dexFile = DexFileFactory.loadDexFile(filename, 19, false);
         Set<ClassDef> customMethodClasses = getAnnotatedClasses(dexFile);
+        customClasses.addAll(customMethodClasses);
         for (MethodAnnotationPair methodAnnotationPair : getAnnotatedMethods(customMethodClasses)) {
             Method method = methodAnnotationPair.method;
             AnnotationElements elements = extractElements(methodAnnotationPair.annotation);
             final String permission = elements.permission;
             MethodRedirection redirection = createRedirection(method, elements.definingClass);
+            if (!permissionToRemove.contains(permission)) {
+                out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s", permission, redirection);
+                continue;
+            }
             if (redirection!=null) {
-                //System.out.println(redirection.toString());
+                out.printf(IOutput.Level.DEBUG, "[%s] Adding redirection: %s\n", permission, redirection);
                 if (!permissionToRedirections.containsKey(permission))
                     permissionToRedirections.put(permission, new HashSet<>());
                 permissionToRedirections.get(permission).add(redirection);
             }
         }
+        out.printf(IOutput.Level.DEBUG, "Loaded custom methods from %s\n", filename);
     }
 
-    private static MethodRedirection createRedirection(Method method, final String definingClass) {
+    private MethodRedirection createRedirection(Method method, final String definingClass) {
         final String methodName = method.getName();
         final String fullMethodName = method.getDefiningClass() + "." + methodName;
         final List<? extends CharSequence> parameterTypes = method.getParameterTypes();
@@ -93,7 +107,7 @@ public class CustomMethodsLoader {
         return new MethodRedirection(originalMethod, newMethod);
     }
 
-    private static ArrayList<String> removeThisParam(List<? extends CharSequence> parameterTypes) {
+    private ArrayList<String> removeThisParam(List<? extends CharSequence> parameterTypes) {
         ArrayList<String> result = new ArrayList<>();
         for (CharSequence cs : parameterTypes)
             result.add(cs.toString());
@@ -102,7 +116,7 @@ public class CustomMethodsLoader {
         return result;
     }
 
-    private static Set<MethodAnnotationPair> getAnnotatedMethods(Set<ClassDef> classes) {
+    private Set<MethodAnnotationPair> getAnnotatedMethods(Set<ClassDef> classes) {
         Set<MethodAnnotationPair> result = new HashSet<>();
         for (ClassDef classDef : classes)
             for (Method method : classDef.getMethods())
@@ -121,8 +135,7 @@ public class CustomMethodsLoader {
         return result;
     }
 
-
-    private static Set<ClassDef> getAnnotatedClasses(DexFile dexFile) {
+    private Set<ClassDef> getAnnotatedClasses(DexFile dexFile) {
         Set<ClassDef> result = new HashSet<>();
         for (ClassDef classDef : dexFile.getClasses())
             for (Annotation a : classDef.getAnnotations()) {
@@ -137,9 +150,8 @@ public class CustomMethodsLoader {
         return result;
     }
 
-    private static void PrintWarning(String msg) {
-        System.err.print("Warning: ");
-        System.err.println(msg);
+    private void PrintWarning(String msg) {
+        out.printf(IOutput.Level.NORMAL, "Warning: %s", msg);
     }
 
 }

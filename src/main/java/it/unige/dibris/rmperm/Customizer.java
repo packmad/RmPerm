@@ -22,45 +22,46 @@ import org.jf.util.ExceptionWithContext;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 
 public class Customizer {
     private final Hashtable<String, List<DexMethod>> reducedPermToMethods = new Hashtable<>();
     private final Hashtable<String, List<DexMethod>> reducedPermToCustomMethods = new Hashtable<>();
-    //private final HashSet<String> removedPerms;
     private final List<ClassDef> customClasses;
-    private final File file;
-    private final Path dst;
+    private final File inputFile;
+    private final String dst;
+    private final IOutput out;
 
 
     public Customizer(
             Hashtable<String, List<DexMethod>> permissionToMethods,
-            Hashtable<String, List<DexMethod>> permissionToCustomMethods,
+            Map<String, Set<MethodRedirection>> methodRedirections,
             List<ClassDef> customClasses,
-            HashSet<String> removedPerms,
+            Set<String> removedPerms,
             String src,
-            Path dst) {
+            String dst,
+            IOutput out) {
         //this.removedPerms = removedPerms;
         this.customClasses = customClasses;
-        this.file = new File(src);
+        this.inputFile = new File(src);
         this.dst = dst;
+        this.out = out;
 
         // work only with requested permission
         for (String p : permissionToMethods.keySet()) {
             if (removedPerms.contains(p))
                 reducedPermToMethods.put(p, permissionToMethods.get(p));
         }
-        for (String p : permissionToCustomMethods.keySet()) {
-            if (removedPerms.contains(p))
-                reducedPermToCustomMethods.put(p, permissionToCustomMethods.get(p));
-        }
+       // for (String p : permissionToCustomMethods.keySet()) {
+         //   if (removedPerms.contains(p))
+           //     reducedPermToCustomMethods.put(p, permissionToCustomMethods.get(p));
+        //}
     }
 
     public void doTheDirtyWork() {
         try {
             final List<ClassDef> classes = new ArrayList(customClasses); //TODO: test if it can be added later
-            DexFile dexFile = DexFileFactory.loadDexFile(file, 19, false);
+            DexFile dexFile = DexFileFactory.loadDexFile(inputFile, 19, false);
             for (ClassDef classDef : dexFile.getClasses()) {
                 List<Method> methods = new ArrayList();
                 boolean modifiedMethod = false;
@@ -103,7 +104,7 @@ public class Customizer {
                 }
             }
 
-            DexFileFactory.writeDexFile(dst.toString(), new DexFile() {
+            DexFileFactory.writeDexFile(dst, new DexFile() {
                     @Override
                     public Set<? extends ClassDef> getClasses() {
                         return new AbstractSet<ClassDef>() {
@@ -122,7 +123,7 @@ public class Customizer {
         }
         catch (ExceptionWithContext ewc) {
             ewc.printStackTrace();
-            System.err.println("You are working on a file that has already been hacked");
+            //System.err.println("You are working on a inputFile that has already been hacked");
         }
 
     }

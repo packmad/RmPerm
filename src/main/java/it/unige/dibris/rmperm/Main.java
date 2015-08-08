@@ -4,75 +4,115 @@ import it.unige.dibris.rmperm.loader.CustomMethodsLoader;
 import it.unige.dibris.rmperm.loader.PermissionToMethodsParser;
 import it.unige.dibris.rmperm.manifest.AndroidManifestUtils;
 import org.apache.commons.cli.*;
+import org.jf.dexlib2.iface.ClassDef;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.Exchanger;
 
 public class Main {
     private static final String OPTION_REMOVE = "remove";
     private static final String OPTION_LIST = "list";
     private static final String OPTION_SOURCE = "source";
     private static final String OPTION_VERBOSE = "verbose";
+    private static final String OPTION_DEBUG = "debug";
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
     private static final String OPTION_OUTPUT = "output-apk";
     private static final String OPTION_PERMISSIONS = "permissions";
     private static final String OPTION_HELP = "help";
+    private final IOutput out;
+    private final CommandLine cmdLine;
+    private final String sourceApkFilename;
+    private final String outApkFilename;
+    private final String customMethodsFilename;
+    private final String csvPermissionsToRemove;
+
+    private static class BadCommandLineException extends Exception {}
+
+    private Main(String[] args) throws BadCommandLineException {
+        cmdLine = parseCmdLine(args);
+        if (cmdLine==null)
+            throw new BadCommandLineException();
+        out = createOutput();
+        sourceApkFilename = cmdLine.getOptionValue(OPTION_SOURCE);
+        outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
+        customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
+        csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
+    }
 
     public static void main(String[] args) {
-        CommandLine cmdLine = parseCmdLine(args);
-        if (cmdLine == null)
-            return;
-
-        String sourceApkFilename = cmdLine.getOptionValue(OPTION_SOURCE);
-        boolean verboseOutput = cmdLine.hasOption(OPTION_VERBOSE);
-        if (cmdLine.hasOption(OPTION_LIST)) {
-            listPermissions(sourceApkFilename, verboseOutput);
-            return;
+        try {
+            new Main(args).main();
+        } catch (BadCommandLineException e) {
+            // NOP
         }
-        assert cmdLine.hasOption(OPTION_REMOVE);
-        removePermissions(sourceApkFilename, verboseOutput, cmdLine);
     }
 
-    private static void removePermissions(String sourceApkFilename, boolean verboseOutput, CommandLine cmdLine) {
-        String outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
-        String customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
-        String csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
-        if (outApkFilename==null || customMethodsFilename==null || csvPermissionsToRemove==null) {
-            System.err.println("Arguments "+OPTION_OUTPUT+", "+OPTION_CUSTOM_METHODS+", "+OPTION_PERMISSIONS+
-                " are required when using "+OPTION_REMOVE);
+    private IOutput createOutput() {
+        IOutput.Level outputLevel = IOutput.Level.NORMAL;
+        if (cmdLine.hasOption(OPTION_DEBUG))
+            outputLevel = IOutput.Level.DEBUG;
+        else if (cmdLine.hasOption(OPTION_VERBOSE))
+            outputLevel = IOutput.Level.VERBOSE;
+        return new ConsoleOutput(outputLevel);
+    }
+
+    private void main() {
+        if (cmdLine.hasOption(OPTION_LIST))
+            listPermissions();
+        else {
+            assert cmdLine.hasOption(OPTION_REMOVE);
+            removePermissions();
+        }
+    }
+
+    private void removePermissions() {
+        if (outApkFilename == null || customMethodsFilename == null || csvPermissionsToRemove == null) {
+            out.printf(IOutput.Level.ERROR, "Arguments --%s, --%s and --%s are required when using --%s\n", OPTION_OUTPUT, OPTION_CUSTOM_METHODS, OPTION_PERMISSIONS, OPTION_REMOVE);
             return;
         }
-        System.out.println("sourceApkFilename="+sourceApkFilename);
-        System.out.println("verboseOutput="+verboseOutput);
-        System.out.println("outApkFilename="+outApkFilename);
-        System.out.println("customMethodsFilename="+customMethodsFilename);
-        System.out.println("csvPermissionsToRemove="+csvPermissionsToRemove);
+        Set<String> permissionToRemove = new HashSet<>();
+        for (String p : csvPermissionsToRemove.split(","))
+            permissionToRemove.add(AndroidManifestUtils.fullPermissionName(p));
+        out.printf(IOutput.Level.VERBOSE, "Removing permission(s): %s\n", permissionToRemove);
         Map<String, Set<MethodRedirection>> methodRedirections = new HashMap<>();
+        List<ClassDef> customClasses = new ArrayList<>();
         try {
-            CustomMethodsLoader.load(customMethodsFilename, methodRedirections);
+            new CustomMethodsLoader(out).load(customMethodsFilename, customClasses, methodRedirections, permissionToRemove);
         } catch (IOException e) {
-            System.err.println("Cannot load custom methods from "+customMethodsFilename);
+            out.printf(IOutput.Level.ERROR, "Cannot load custom methods from %s\n", customMethodsFilename);
             return;
         }
+        int totRedirections = 0;
+        for(Set<MethodRedirection> redirections : methodRedirections.values())
+            totRedirections+=redirections.size();
+        out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections, for %d permissions\n", totRedirections, methodRedirections.size());
         final Hashtable<String, List<DexMethod>> permissionToMethods;
         try {
-            permissionToMethods = PermissionToMethodsParser.loadMapping();
+            permissionToMethods = PermissionToMethodsParser.loadMapping(out);
         } catch (IOException e) {
-            System.err.println("This is weird: there is something wrong with my permission-to-API resource");
+            out.printf(IOutput.Level.ERROR, "This is weird: there is something wrong with my permission-to-API resource\n");
             return;
         }
-        System.out.println("Not implemented (yet)!");
+        //Customizer c = new Customizer(permissionToMethods, methodRedirections, customClasses, permissionToRemove, sourceApkFilename, outApkFilename, out);
+        out.printf(IOutput.Level.ERROR, "Not implemented (yet)!\n");
     }
 
-    private static void listPermissions(String sourceApkFilename, boolean verboseOutput) {
-        try {
-            AndroidManifestUtils.printPermissions(sourceApkFilename);
-        } catch (IOException e) {
-            System.out.println("I/O error: " + e.getMessage());
-        }
+    private void listPermissions() {
+        final String errorMsg = "Error: option --%s makes no sense when --%s is specified\n";
+        final String[] nonsensicalOptions = {OPTION_OUTPUT, OPTION_CUSTOM_METHODS, OPTION_PERMISSIONS};
+        boolean error = false;
+        for (String nonsensicalOption : nonsensicalOptions)
+            if (cmdLine.getOptionValue(nonsensicalOption) != null) {
+                out.printf(IOutput.Level.ERROR, errorMsg, nonsensicalOption, OPTION_LIST);
+                error = true;
+            }
+        if (!error)
+            try {
+                new AndroidManifestUtils(out).printPermissions(sourceApkFilename);
+            } catch (IOException e) {
+                out.printf(IOutput.Level.ERROR, "I/O error: %s\n", e.getMessage());
+            }
     }
 
     private static CommandLine parseCmdLine(String[] args) {
@@ -91,6 +131,8 @@ public class Main {
         s.setRequired(true);
         Option v = new Option(OPTION_VERBOSE.substring(0, 1), "Verbose output");
         v.setLongOpt(OPTION_VERBOSE);
+        Option d = new Option(OPTION_DEBUG.substring(0, 1), "Debug output (implies -v)");
+        d.setLongOpt(OPTION_DEBUG);
         Option h = new Option(OPTION_HELP.substring(0, 1), "Print this help");
         h.setLongOpt(OPTION_HELP);
         Option n = new Option("n", "Disable the auto removal of void methods");
@@ -111,6 +153,7 @@ public class Main {
         options.addOptionGroup(g)
                .addOption(h)
                .addOption(v)
+               .addOption(d)
                .addOption(s)
                .addOption(c)
                .addOption(o)
@@ -121,6 +164,7 @@ public class Main {
             cmdline = new GnuParser().parse(options, args);
         } catch (ParseException exp) {
             System.err.println(exp.getMessage());
+            System.err.println();
             parsingError = true;
         }
         if (parsingError || cmdline.hasOption(OPTION_HELP)) {
