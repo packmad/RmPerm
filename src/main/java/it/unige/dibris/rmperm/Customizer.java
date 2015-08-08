@@ -14,6 +14,7 @@ import org.jf.dexlib2.iface.DexFile;
 import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.iface.MethodImplementation;
 import org.jf.dexlib2.iface.instruction.Instruction;
+import org.jf.dexlib2.iface.reference.MethodReference;
 import org.jf.dexlib2.iface.reference.Reference;
 import org.jf.dexlib2.immutable.ImmutableClassDef;
 import org.jf.dexlib2.immutable.ImmutableMethod;
@@ -29,33 +30,20 @@ public class Customizer {
     private final Hashtable<String, List<DexMethod>> reducedPermToCustomMethods = new Hashtable<>();
     private final List<ClassDef> customClasses;
     private final File inputFile;
-    private final String dst;
+    private final String dstApkFilename;
     private final IOutput out;
-
 
     public Customizer(
             Hashtable<String, List<DexMethod>> permissionToMethods,
-            Map<String, Set<MethodRedirection>> methodRedirections,
+            Map<MethodReference, MethodReference> redirections,
             List<ClassDef> customClasses,
-            Set<String> removedPerms,
             String src,
-            String dst,
+            String dstApkFilename,
             IOutput out) {
-        //this.removedPerms = removedPerms;
         this.customClasses = customClasses;
         this.inputFile = new File(src);
-        this.dst = dst;
+        this.dstApkFilename = dstApkFilename;
         this.out = out;
-
-        // work only with requested permission
-        for (String p : permissionToMethods.keySet()) {
-            if (removedPerms.contains(p))
-                reducedPermToMethods.put(p, permissionToMethods.get(p));
-        }
-       // for (String p : permissionToCustomMethods.keySet()) {
-         //   if (removedPerms.contains(p))
-           //     reducedPermToCustomMethods.put(p, permissionToCustomMethods.get(p));
-        //}
     }
 
     public void doTheDirtyWork() {
@@ -104,7 +92,7 @@ public class Customizer {
                 }
             }
 
-            DexFileFactory.writeDexFile(dst, new DexFile() {
+            DexFileFactory.writeDexFile(dstApkFilename, new DexFile() {
                     @Override
                     public Set<? extends ClassDef> getClasses() {
                         return new AbstractSet<ClassDef>() {

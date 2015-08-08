@@ -5,6 +5,7 @@ import it.unige.dibris.rmperm.loader.PermissionToMethodsParser;
 import it.unige.dibris.rmperm.manifest.AndroidManifestUtils;
 import org.apache.commons.cli.*;
 import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.IOException;
 import java.util.*;
@@ -75,18 +76,15 @@ public class Main {
         for (String p : csvPermissionsToRemove.split(","))
             permissionToRemove.add(AndroidManifestUtils.fullPermissionName(p));
         out.printf(IOutput.Level.VERBOSE, "Removing permission(s): %s\n", permissionToRemove);
-        Map<String, Set<MethodRedirection>> methodRedirections = new HashMap<>();
+        Map<MethodReference, MethodReference> redirections = new HashMap<>();
         List<ClassDef> customClasses = new ArrayList<>();
         try {
-            new CustomMethodsLoader(out).load(customMethodsFilename, customClasses, methodRedirections, permissionToRemove);
+            new CustomMethodsLoader(out).load(customMethodsFilename, customClasses, redirections, permissionToRemove);
         } catch (IOException e) {
             out.printf(IOutput.Level.ERROR, "Cannot load custom methods from %s\n", customMethodsFilename);
             return;
         }
-        int totRedirections = 0;
-        for(Set<MethodRedirection> redirections : methodRedirections.values())
-            totRedirections+=redirections.size();
-        out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections, for %d permissions\n", totRedirections, methodRedirections.size());
+        out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections\n", redirections.size());
         final Hashtable<String, List<DexMethod>> permissionToMethods;
         try {
             permissionToMethods = PermissionToMethodsParser.loadMapping(out);
@@ -94,7 +92,7 @@ public class Main {
             out.printf(IOutput.Level.ERROR, "This is weird: there is something wrong with my permission-to-API resource\n");
             return;
         }
-        //Customizer c = new Customizer(permissionToMethods, methodRedirections, customClasses, permissionToRemove, sourceApkFilename, outApkFilename, out);
+        Customizer c = new Customizer(permissionToMethods, redirections, customClasses, sourceApkFilename, outApkFilename, out);
         out.printf(IOutput.Level.ERROR, "Not implemented (yet)!\n");
     }
 

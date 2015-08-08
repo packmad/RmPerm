@@ -2,11 +2,11 @@ package it.unige.dibris.rmperm.loader;
 
 import it.unige.dibris.rmperm.DexMethod;
 import it.unige.dibris.rmperm.IOutput;
-import it.unige.dibris.rmperm.MethodRedirection;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.value.DexBackedStringEncodedValue;
 import org.jf.dexlib2.iface.*;
+import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.IOException;
 import java.util.*;
@@ -64,7 +64,7 @@ public class CustomMethodsLoader {
         return new AnnotationElements(definingClass, permission);
     }
 
-    public void load(String filename, List<ClassDef> customClasses, Map<String, Set<MethodRedirection>> permissionToRedirections, Set<String> permissionToRemove) throws IOException {
+    public void load(String filename, List<ClassDef> customClasses, Map<MethodReference, MethodReference> redirections, Set<String> permissionToRemove) throws IOException {
         out.printf(IOutput.Level.VERBOSE, "Loading custom methods from %s\n", filename);
         DexFile dexFile = DexFileFactory.loadDexFile(filename, 19, false);
         Set<ClassDef> customMethodClasses = getAnnotatedClasses(dexFile);
@@ -73,38 +73,30 @@ public class CustomMethodsLoader {
             Method method = methodAnnotationPair.method;
             AnnotationElements elements = extractElements(methodAnnotationPair.annotation);
             final String permission = elements.permission;
-            MethodRedirection redirection = createRedirection(method, elements.definingClass);
-            if (!permissionToRemove.contains(permission)) {
-                out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s", permission, redirection);
+            final String definingClass = elements.definingClass;
+            final String methodName = method.getName();
+            final String fullMethodName = method.getDefiningClass() + "." + methodName;
+            final List<? extends CharSequence> parameterTypes = method.getParameterTypes();
+            if (parameterTypes.isEmpty()) {
+                PrintWarning("ignoring " + fullMethodName + " because its signature is missing the 'this' parameter");
                 continue;
             }
-            if (redirection!=null) {
-                out.printf(IOutput.Level.DEBUG, "[%s] Adding redirection: %s\n", permission, redirection);
-                if (!permissionToRedirections.containsKey(permission))
-                    permissionToRedirections.put(permission, new HashSet<>());
-                permissionToRedirections.get(permission).add(redirection);
+            String firstParameterType = parameterTypes.get(0).toString();
+            if (!firstParameterType.equals(definingClass)) {
+                PrintWarning("ignoring " + fullMethodName + " because its 'this' parameter has a wrong type");
+                continue;
             }
+            final String returnType = method.getReturnType();
+            final DexMethod originalMethod = new DexMethod(definingClass, methodName, removeThisParam(parameterTypes), returnType);
+            final DexMethod newMethod = new DexMethod(method.getDefiningClass(), methodName, parameterTypes, returnType);
+            if (!permissionToRemove.contains(permission)) {
+                //out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s--->%s\n", permission, originalMethod, newMethod);
+                continue;
+            }
+            out.printf(IOutput.Level.DEBUG, "[%s] Adding redirection: %s--->%s\n", permission, originalMethod, newMethod);
+            redirections.put(originalMethod, newMethod);
         }
         out.printf(IOutput.Level.DEBUG, "Loaded custom methods from %s\n", filename);
-    }
-
-    private MethodRedirection createRedirection(Method method, final String definingClass) {
-        final String methodName = method.getName();
-        final String fullMethodName = method.getDefiningClass() + "." + methodName;
-        final List<? extends CharSequence> parameterTypes = method.getParameterTypes();
-        if (parameterTypes.isEmpty()) {
-            PrintWarning("ignoring " + fullMethodName + " because its signature is missing the 'this' parameter");
-            return null;
-        }
-        String firstParameterType = parameterTypes.get(0).toString();
-        if (!firstParameterType.equals(definingClass)) {
-            PrintWarning("ignoring " + fullMethodName + " because its 'this' parameter has a wrong type");
-            return null;
-        }
-        final String returnType = method.getReturnType();
-        final DexMethod originalMethod = new DexMethod(definingClass, methodName, removeThisParam(parameterTypes), returnType);
-        final DexMethod newMethod = new DexMethod(method.getDefiningClass(), methodName, parameterTypes, returnType);
-        return new MethodRedirection(originalMethod, newMethod);
     }
 
     private ArrayList<String> removeThisParam(List<? extends CharSequence> parameterTypes) {
@@ -121,7 +113,8 @@ public class CustomMethodsLoader {
         for (ClassDef classDef : classes)
             for (Method method : classDef.getMethods())
                 for (Annotation a : method.getAnnotations()) {
-                    if (a.getType().equals(METHOD_PERMISSION_ANNOTATION)) {
+                    if (a.getType()
+                         .equals(METHOD_PERMISSION_ANNOTATION)) {
                         final int flags = method.getAccessFlags();
                         boolean isPublic = AccessFlags.PUBLIC.isSet(flags);
                         boolean isStatic = AccessFlags.STATIC.isSet(flags);
@@ -139,7 +132,8 @@ public class CustomMethodsLoader {
         Set<ClassDef> result = new HashSet<>();
         for (ClassDef classDef : dexFile.getClasses())
             for (Annotation a : classDef.getAnnotations()) {
-                if (a.getType().equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
+                if (a.getType()
+                     .equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
                     if (AccessFlags.PUBLIC.isSet(classDef.getAccessFlags()))
                         result.add(classDef);
                     else
