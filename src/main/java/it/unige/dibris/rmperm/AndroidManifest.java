@@ -65,8 +65,7 @@ class AndroidManifest {
             } else if (chunkHeader.type == RES_XML_END_ELEMENT_TYPE) {
                 ResXmlEndElement endElement = new ResXmlEndElement(chunkHeader, src);
                 assert current != null;
-                assert current.name.lookup()
-                                   .equals(endElement.name.lookup());
+                assert current.name.lookup().equals(endElement.name.lookup());
                 current.setEndElement(endElement);
                 current = parents.pop();
                 this.chunks.add(endElement);
@@ -98,9 +97,8 @@ class AndroidManifest {
 
     public boolean tryToRemovePermission(String permission) {
         ResXmlStartElement element = permissions.get(permission);
-        if (element == null) {
+        if (element == null)
             return false;
-        }
         permissions.remove(permission);
         element.remove();
         return true;
@@ -127,9 +125,8 @@ class AndroidManifest {
             tgt.writeU16(type);
             tgt.writeU16(headerSize);
             long newSizeAligned = newSize + 2 * ResTarget.LEN_U16 + ResTarget.LEN_U32;
-            while (0 != newSizeAligned % 4) {
-                newSizeAligned++;
-            }
+            while (0 != newSizeAligned % 4)
+                ++newSizeAligned;
             tgt.writeU32(newSizeAligned);
             return newSizeAligned;
         }

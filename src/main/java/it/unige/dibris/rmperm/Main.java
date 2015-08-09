@@ -15,7 +15,7 @@ import java.util.zip.ZipOutputStream;
 class Main {
     private static final String OPTION_REMOVE = "remove";
     private static final String OPTION_LIST = "list";
-    private static final String OPTION_SOURCE = "source";
+    private static final String OPTION_INPUT = "input";
     private static final String OPTION_VERBOSE = "verbose";
     private static final String OPTION_DEBUG = "debug";
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
@@ -23,9 +23,10 @@ class Main {
     private static final String OPTION_PERMISSIONS = "permissions";
     private static final String OPTION_HELP = "help";
     private static final String OPTION_NO_AUTO_REMOVE_VOID = "no-auto-remove";
+
     private final IOutput out;
     private final CommandLine cmdLine;
-    private final String sourceApkFilename;
+    private final String inApkFilename;
     private final String outApkFilename;
     private final String customMethodsFilename;
     private final String csvPermissionsToRemove;
@@ -51,7 +52,7 @@ class Main {
         else if (cmdLine.hasOption(OPTION_VERBOSE))
             outputLevel = IOutput.Level.VERBOSE;
         out = new ConsoleOutput(outputLevel);
-        sourceApkFilename = cmdLine.getOptionValue(OPTION_SOURCE);
+        inApkFilename = cmdLine.getOptionValue(OPTION_INPUT);
         outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
         customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
         csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
@@ -130,8 +131,8 @@ class Main {
     }
 
     private void writeApk(File tmpClassesDex, File tmpManifestFile, File outApkFile) throws IOException {
-        out.printf(IOutput.Level.VERBOSE, "Customizing %s into %s\n", sourceApkFilename, outApkFile);
-        JarFile inputJar = new JarFile(sourceApkFilename);
+        out.printf(IOutput.Level.VERBOSE, "Writing APK %s\n", outApkFile);
+        JarFile inputJar = new JarFile(inApkFilename);
         ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile));
         Enumeration<JarEntry> entries = inputJar.entries();
         while (entries.hasMoreElements()) {
@@ -157,7 +158,7 @@ class Main {
     }
 
     private File stripPermissionsFromManifest(Set<String> permissionsToRemove) throws IOException {
-        AndroidManifest manifest = AndroidManifest.extractManifest(sourceApkFilename);
+        AndroidManifest manifest = AndroidManifest.extractManifest(inApkFilename);
         for (String permission : permissionsToRemove) {
             boolean result = manifest.tryToRemovePermission(permission);
             if (!result)
@@ -179,7 +180,7 @@ class Main {
         BytecodeCustomizer c = new BytecodeCustomizer(apiToPermissions,
                                                       redirections,
                                                       customClasses,
-                                                      new File(sourceApkFilename),
+                                                      new File(inApkFilename),
                                                       tmpClassesDex,
                                                       out,
                                                       noAutoRemoveVoid);
@@ -197,9 +198,9 @@ class Main {
     private void listPermissions() {
         AndroidManifest manifest;
         try {
-            manifest = AndroidManifest.extractManifest(sourceApkFilename);
+            manifest = AndroidManifest.extractManifest(inApkFilename);
         } catch (IOException e) {
-            out.printf(IOutput.Level.ERROR, "Cannot read %s: %s\n", sourceApkFilename, e.getMessage());
+            out.printf(IOutput.Level.ERROR, "Cannot read %s: %s\n", inApkFilename, e.getMessage());
             return;
         }
         List<String> permissions = new ArrayList<>();
@@ -209,12 +210,11 @@ class Main {
             out.printf(IOutput.Level.NORMAL, "No permissions are requested in the manifest!\n");
             return;
         }
-        out.printf(IOutput.Level.NORMAL, "Permissions of %s:\n", sourceApkFilename);
+        out.printf(IOutput.Level.NORMAL, "Permissions of %s:\n", inApkFilename);
         for (String p : permissions)
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
         out.printf(IOutput.Level.NORMAL,
-                   "\nTo remove all of them you can pass rmperm the parameters:\n-r -s %s -p %s\n",
-                   sourceApkFilename,
+                   "\nTo remove all of them you can pass rmperm the parameters:\n-r -s %s -p %s\n", inApkFilename,
                    String.join(",", permissions));
 
     }
@@ -246,11 +246,11 @@ class Main {
         g.addOption(r)
          .addOption(l)
          .setRequired(true);
-        Option s = new Option(OPTION_SOURCE.substring(0, 1), "Specifies the source APK file");
-        s.setArgs(1);
-        s.setArgName("APK-filename");
-        s.setLongOpt(OPTION_SOURCE);
-        s.setRequired(true);
+        Option i = new Option(OPTION_INPUT.substring(0, 1), "Input APK file");
+        i.setArgs(1);
+        i.setArgName("APK-filename");
+        i.setLongOpt(OPTION_INPUT);
+        i.setRequired(true);
         Option v = new Option(OPTION_VERBOSE.substring(0, 1), "Verbose output");
         v.setLongOpt(OPTION_VERBOSE);
         Option d = new Option(OPTION_DEBUG.substring(0, 1), "Debug output (implies -v)");
@@ -259,7 +259,7 @@ class Main {
         h.setLongOpt(OPTION_HELP);
         Option n = new Option(OPTION_NO_AUTO_REMOVE_VOID.substring(0, 1), "Disable the auto-removal of void methods");
         n.setLongOpt(OPTION_NO_AUTO_REMOVE_VOID);
-        Option c = new Option(OPTION_CUSTOM_METHODS.substring(0, 1), "Source APK filename");
+        Option c = new Option(OPTION_CUSTOM_METHODS.substring(0, 1), "APK/Dex filename of custom classes");
         c.setArgs(1);
         c.setArgName("APK/DEX-filename");
         c.setLongOpt(OPTION_CUSTOM_METHODS);
@@ -276,7 +276,7 @@ class Main {
                .addOption(h)
                .addOption(v)
                .addOption(d)
-               .addOption(s)
+               .addOption(i)
                .addOption(c)
                .addOption(o)
                .addOption(p);

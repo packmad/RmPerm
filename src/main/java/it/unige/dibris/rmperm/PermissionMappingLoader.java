@@ -25,8 +25,7 @@ class PermissionMappingLoader {
 
     public Map<MethodReference, Set<String>> loadMapping(Set<String> permissionToRemove) throws IOException {
         final Map<MethodReference, Set<String>> result = new HashMap<>();
-        InputStream resourceAsStream = this.getClass()
-                                           .getResourceAsStream("/jellybean_publishedapimapping");
+        InputStream resourceAsStream = this.getClass().getResourceAsStream("/jellybean_publishedapimapping");
         BufferedReader reader = new BufferedReader(new InputStreamReader(resourceAsStream));
         String line;
         String permission = null;
