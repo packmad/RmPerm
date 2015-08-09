@@ -1,5 +1,6 @@
 package it.unige.dibris.rmperm;
 
+import kellinwood.security.zipsigner.ZipSigner;
 import org.apache.commons.cli.*;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.reference.MethodReference;
@@ -83,13 +84,15 @@ class Main {
             }
             try {
                 removePermissions();
-            }  catch (IOException e) {
+            } catch (IOException e) {
                 out.printf(IOutput.Level.ERROR, "I/O error: %s\n", e.getMessage());
+            } catch (Exception e) {
+                out.printf(IOutput.Level.ERROR, "Error: %s\n", e.getMessage());
             }
         }
     }
 
-    private void removePermissions() throws IOException {
+    private void removePermissions() throws Exception {
         Set<String> permissionsToRemove = parseCsvPermissions();
         out.printf(IOutput.Level.VERBOSE, "Removing permission(s): %s\n", permissionsToRemove);
         Map<MethodReference, MethodReference> redirections = new HashMap<>();
@@ -98,30 +101,44 @@ class Main {
         out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections\n", redirections.size());
         final Map<MethodReference, Set<String>> apiToPermissions;
         apiToPermissions = new PermissionMappingLoader(out).loadMapping(permissionsToRemove);
-        final File tmpClassesDex = customizeBytecode(apiToPermissions, redirections, customClasses);
+        final File tmpApkFile = File.createTempFile("OutputApk", null);
+        tmpApkFile.deleteOnExit();
         try {
-            final File tmpManifestFile = stripPermissionsFromManifest(permissionsToRemove);
+            final File tmpClassesDex = customizeBytecode(apiToPermissions, redirections, customClasses);
             try {
-                writeApk(tmpClassesDex, tmpManifestFile);
+                final File tmpManifestFile = stripPermissionsFromManifest(permissionsToRemove);
+                try {
+                    writeApk(tmpClassesDex, tmpManifestFile, tmpApkFile);
+                } finally {
+                    tmpManifestFile.delete();
+                }
             } finally {
-                tmpManifestFile.delete();
+                tmpClassesDex.delete();
             }
+            signApk(tmpApkFile);
         } finally {
-            tmpClassesDex.delete();
+            tmpApkFile.delete();
         }
-        // TODO sign-and-align the APK
     }
 
-    private void writeApk(File tmpClassesDex, File tmpManifestFile) throws IOException {
-        out.printf(IOutput.Level.NORMAL, "Customizing %s into %s\n\n", sourceApkFilename, outApkFilename);
+    private void signApk(File tmpApkFile) throws Exception {
+        ZipSigner zipSigner = new ZipSigner();
+        zipSigner.setKeymode("auto-testkey");
+        String inputFilename = tmpApkFile.getCanonicalPath();
+        out.printf(IOutput.Level.NORMAL, "Signing %s into %s\n", inputFilename, outApkFilename);
+        zipSigner.signZip(inputFilename, outApkFilename);
+    }
+
+    private void writeApk(File tmpClassesDex, File tmpManifestFile, File outApkFile) throws IOException {
+        out.printf(IOutput.Level.NORMAL, "Customizing %s into %s\n", sourceApkFilename, outApkFile);
         JarFile inputJar = new JarFile(sourceApkFilename);
-        ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFilename));
+        ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile));
         Enumeration<JarEntry> entries = inputJar.entries();
         while (entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
             final String name = entry.getName();
-            if (name.equalsIgnoreCase("META-INF/MANIFEST.MF"))
-                continue;
+            //if (name.equalsIgnoreCase("META-INF/MANIFEST.MF"))
+            //    continue;
             outputJar.putNextEntry(new ZipEntry(name));
             if (name.equalsIgnoreCase("AndroidManifest.xml")) {
                 FileInputStream newManifest = new FileInputStream(tmpManifestFile);

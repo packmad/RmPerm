@@ -57,7 +57,7 @@ class BytecodeCustomizer {
             classes.add(customizeClass(classDef));
         if (nNotRedirected == 0)
             out.printf(IOutput.Level.VERBOSE,
-                       "Removed %d invocation(s) and redirected %d (no NOT redirected)",
+                       "Removed %d invocation(s) and redirected %d (no NOT redirected)\n",
                        nRemoved,
                        nRedirected);
         else

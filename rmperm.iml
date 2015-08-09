@@ -25,5 +25,41 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="Gradle: zipio-lib-1.8">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/zipio-lib-1.8.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="Gradle: bcprov-jdk15on-152">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/bcprov-jdk15on-152.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="Gradle: zipsigner-lib-1.17">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/zipsigner-lib-1.17.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="Gradle: kellinwood-logging-lib-1.1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/kellinwood-logging-lib-1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
