@@ -125,20 +125,18 @@ class Main {
         ZipSigner zipSigner = new ZipSigner();
         zipSigner.setKeymode("auto-testkey");
         String inputFilename = tmpApkFile.getCanonicalPath();
-        out.printf(IOutput.Level.NORMAL, "Signing %s into %s\n", inputFilename, outApkFilename);
+        out.printf(IOutput.Level.VERBOSE, "Signing %s into %s\n", inputFilename, outApkFilename);
         zipSigner.signZip(inputFilename, outApkFilename);
     }
 
     private void writeApk(File tmpClassesDex, File tmpManifestFile, File outApkFile) throws IOException {
-        out.printf(IOutput.Level.NORMAL, "Customizing %s into %s\n", sourceApkFilename, outApkFile);
+        out.printf(IOutput.Level.VERBOSE, "Customizing %s into %s\n", sourceApkFilename, outApkFile);
         JarFile inputJar = new JarFile(sourceApkFilename);
         ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile));
         Enumeration<JarEntry> entries = inputJar.entries();
         while (entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
             final String name = entry.getName();
-            //if (name.equalsIgnoreCase("META-INF/MANIFEST.MF"))
-            //    continue;
             outputJar.putNextEntry(new ZipEntry(name));
             if (name.equalsIgnoreCase("AndroidManifest.xml")) {
                 FileInputStream newManifest = new FileInputStream(tmpManifestFile);
