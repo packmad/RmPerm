@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-class Customizer {
+class BytecodeCustomizer {
     private final Map<MethodReference, Set<String>> apiToPermissions;
     private final Map<MethodReference, MethodReference> redirections;
     private final List<ClassDef> customClasses;
@@ -32,13 +32,13 @@ class Customizer {
     private int nNotRedirected;
     private int nRemoved;
 
-    public Customizer(Map<MethodReference, Set<String>> apiToPermissions,
-                      Map<MethodReference, MethodReference> redirections,
-                      List<ClassDef> customClasses,
-                      File inputFile,
-                      File outputDex,
-                      IOutput out,
-                      boolean noAutoRemoveVoid
+    public BytecodeCustomizer(Map<MethodReference, Set<String>> apiToPermissions,
+                              Map<MethodReference, MethodReference> redirections,
+                              List<ClassDef> customClasses,
+                              File inputFile,
+                              File outputDex,
+                              IOutput out,
+                              boolean noAutoRemoveVoid
     ) {
         this.apiToPermissions = apiToPermissions;
         this.redirections = redirections;
@@ -50,7 +50,7 @@ class Customizer {
     }
 
     public void customize() throws IOException {
-        nRedirected = nRemoved = 0;
+        nRedirected = nRemoved = nNotRedirected = 0;
         final List<ClassDef> classes = new ArrayList<>(customClasses);
         DexFile dexFile = DexFileFactory.loadDexFile(inputFile, 19, false);
         for (ClassDef classDef : dexFile.getClasses())
@@ -66,6 +66,10 @@ class Customizer {
                        nRemoved,
                        nRedirected,
                        nNotRedirected);
+        writeDexFile(classes);
+    }
+
+    private void writeDexFile(final List<ClassDef> classes) throws IOException {
         String outputFilename = outputDex.getCanonicalPath();
         out.printf(IOutput.Level.DEBUG, "Writing DEX-file: %s\n", outputFilename);
         DexFileFactory.writeDexFile(outputFilename, new DexFile() {
@@ -161,12 +165,8 @@ class Customizer {
                                              invokeInstr.getRegisterG(),
                                              redirection);
         }
-        if (r.getReturnType()
-             .equals("V") && !noAutoRemoveVoid) {
-            out.printf(IOutput.Level.DEBUG,
-                       "Can't find a specific redirection, but it's a void method, so I throw " + "the invocation away\n");
+        if (r.getReturnType().equals("V") && !noAutoRemoveVoid)
             return null;
-        }
         ++nNotRedirected;
         out.printf(IOutput.Level.ERROR,
                    "Method %s.%s uses %s, but I don't have a redirection for it\n",

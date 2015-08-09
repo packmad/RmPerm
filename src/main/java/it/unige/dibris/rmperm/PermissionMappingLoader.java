@@ -1,7 +1,5 @@
-package it.unige.dibris.rmperm.loader;
+package it.unige.dibris.rmperm;
 
-import it.unige.dibris.rmperm.DexMethod;
-import it.unige.dibris.rmperm.IOutput;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.BufferedReader;
@@ -13,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class PermissionToMethodsParser {
+class PermissionMappingLoader {
 
     private static final Pattern permPattern = Pattern.compile("^Permission:(android.permission.[A-Z_]*)$");
     private static final Pattern methodPattern = Pattern.compile(
@@ -21,7 +19,7 @@ public class PermissionToMethodsParser {
 
     private final IOutput out;
 
-    public PermissionToMethodsParser(IOutput out) {
+    public PermissionMappingLoader(IOutput out) {
         this.out = out;
     }
 
@@ -34,9 +32,9 @@ public class PermissionToMethodsParser {
         String permission = null;
         while ((line = reader.readLine()) != null) {
             Matcher permMatcher = permPattern.matcher(line);
-            if (permMatcher.matches()) {
+            if (permMatcher.matches())
                 permission = permMatcher.group(1);
-            } else {
+            else {
                 assert permission != null;
                 if (!permissionToRemove.contains(permission))
                     continue;
@@ -49,8 +47,7 @@ public class PermissionToMethodsParser {
                     DexMethod dm = new DexMethod(definingClass, name, params, returnType);
                     if (!result.containsKey(dm))
                         result.put(dm, new HashSet<>());
-                    result.get(dm)
-                          .add(permission);
+                    result.get(dm).add(permission);
                 }
             }
         }

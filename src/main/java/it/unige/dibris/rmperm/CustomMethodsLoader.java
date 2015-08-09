@@ -1,7 +1,5 @@
-package it.unige.dibris.rmperm.loader;
+package it.unige.dibris.rmperm;
 
-import it.unige.dibris.rmperm.DexMethod;
-import it.unige.dibris.rmperm.IOutput;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.value.DexBackedStringEncodedValue;
@@ -11,7 +9,7 @@ import org.jf.dexlib2.iface.reference.MethodReference;
 import java.io.IOException;
 import java.util.*;
 
-public class CustomMethodsLoader {
+class CustomMethodsLoader {
     private static final String CUSTOM_METHOD_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/CustomMethodClass;";
     private static final String METHOD_PERMISSION_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/MethodPermission;";
     private static final String METHOD_ANNOTATION_PERMISSION_ELEMENT = "permission";
@@ -53,7 +51,8 @@ public class CustomMethodsLoader {
                     permission = ((DexBackedStringEncodedValue) element.getValue()).getValue();
                     break;
                 case METHOD_ANNOTATION_DEFINING_CLASS_ELEMENT:
-                    definingClass = DexMethod.fromJavaTypeToDalvikType(((DexBackedStringEncodedValue) element.getValue()).getValue());
+                    String javaType = ((DexBackedStringEncodedValue) element.getValue()).getValue();
+                    definingClass = DexMethod.fromJavaTypeToDalvikType(javaType);
                     break;
                 default:
                     assert false;
@@ -74,8 +73,8 @@ public class CustomMethodsLoader {
         Set<ClassDef> customMethodClasses = getAnnotatedClasses(dexFile);
         customClasses.addAll(customMethodClasses);
         for (MethodAnnotationPair methodAnnotationPair : getAnnotatedMethods(customMethodClasses)) {
-            Method method = methodAnnotationPair.method;
-            AnnotationElements elements = extractElements(methodAnnotationPair.annotation);
+            final Method method = methodAnnotationPair.method;
+            final AnnotationElements elements = extractElements(methodAnnotationPair.annotation);
             final String permission = elements.permission;
             final String definingClass = elements.definingClass;
             final String methodName = method.getName();
@@ -100,8 +99,7 @@ public class CustomMethodsLoader {
                                                       parameterTypes,
                                                       returnType);
             if (!permissionToRemove.contains(permission)) {
-                //out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s--->%s\n", permission, originalMethod,
-                // newMethod);
+                //out.printf(IOutput.Level.DEBUG, "[%s] Skipping redirection %s--->%s\n", permission, originalMethod, newMethod);
                 continue;
             }
             out.printf(IOutput.Level.DEBUG,
@@ -128,8 +126,7 @@ public class CustomMethodsLoader {
         for (ClassDef classDef : classes)
             for (Method method : classDef.getMethods())
                 for (Annotation a : method.getAnnotations()) {
-                    if (a.getType()
-                         .equals(METHOD_PERMISSION_ANNOTATION)) {
+                    if (a.getType().equals(METHOD_PERMISSION_ANNOTATION)) {
                         final int flags = method.getAccessFlags();
                         boolean isPublic = AccessFlags.PUBLIC.isSet(flags);
                         boolean isStatic = AccessFlags.STATIC.isSet(flags);
@@ -148,8 +145,7 @@ public class CustomMethodsLoader {
         Set<ClassDef> result = new HashSet<>();
         for (ClassDef classDef : dexFile.getClasses())
             for (Annotation a : classDef.getAnnotations()) {
-                if (a.getType()
-                     .equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
+                if (a.getType().equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
                     if (AccessFlags.PUBLIC.isSet(classDef.getAccessFlags()))
                         result.add(classDef);
                     else

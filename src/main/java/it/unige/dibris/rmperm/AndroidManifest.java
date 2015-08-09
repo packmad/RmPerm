@@ -1,24 +1,42 @@
-package it.unige.dibris.rmperm.manifest;
+package it.unige.dibris.rmperm;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.jar.JarFile;
 
-public class AndroidManifest {
+class AndroidManifest {
     private final ResSource src;
     private ResChunkHeader fileHeader;
     private ResStringPool stringPool;
     private final List<ResChunk> chunks = new ArrayList<>();
     private final HashMap<String, ResXmlStartElement> permissions = new HashMap<>();
 
-    public AndroidManifest(File source) throws IOException {
+    private AndroidManifest(File source) throws IOException {
         this.src = new ResSource(source);
         read();
+    }
+
+    public static AndroidManifest extractManifest(final String apkFilename) throws IOException {
+        final File tmpManifestFile = extractManifestToTemporaryFile(apkFilename);
+        try {
+            return new AndroidManifest(tmpManifestFile);
+        } finally {
+            tmpManifestFile.delete();
+        }
+    }
+
+    private static File extractManifestToTemporaryFile(final String apkFilename) throws IOException {
+        final File tmpManifestFile = File.createTempFile("AndroidManifest", null);
+        tmpManifestFile.deleteOnExit();
+        JarFile jf = new JarFile(apkFilename);
+        OutputStream out = new FileOutputStream(tmpManifestFile);
+        InputStream is = jf.getInputStream(jf.getEntry("AndroidManifest.xml"));
+        StreamUtils.copyAndClose(is, out);
+        return tmpManifestFile;
     }
 
     public Iterable<String> getPermissions() {
