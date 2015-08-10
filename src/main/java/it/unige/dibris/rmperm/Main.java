@@ -213,7 +213,11 @@ class Main {
         for (String p : permissions)
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
         out.printf(IOutput.Level.NORMAL,
-                   "\nTo remove all of them you can pass rmperm the parameters:\n-r -s %s -p %s\n", inApkFilename,
+                   "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",
+                   OPTION_REMOVE,
+                   OPTION_INPUT,
+                   inApkFilename,
+                   OPTION_PERMISSIONS,
                    String.join(",", permissions));
 
     }
