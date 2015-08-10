@@ -79,8 +79,11 @@ class AndroidManifest {
 
     public void write(File file) throws IOException {
         ResTarget tgt = new ResTargetImpl(file);
-        writeTo(tgt);
-        tgt.close();
+        try {
+            writeTo(tgt);
+        } finally {
+            tgt.close();
+        }
     }
 
     private void writeTo(ResTarget tgt) throws IOException {

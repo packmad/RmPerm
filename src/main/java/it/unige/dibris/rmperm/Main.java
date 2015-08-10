@@ -133,28 +133,27 @@ class Main {
     private void writeApk(File tmpClassesDex, File tmpManifestFile, File outApkFile) throws IOException {
         out.printf(IOutput.Level.VERBOSE, "Writing APK %s\n", outApkFile);
         JarFile inputJar = new JarFile(inApkFilename);
-        ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile));
-        Enumeration<JarEntry> entries = inputJar.entries();
-        while (entries.hasMoreElements()) {
-            JarEntry entry = entries.nextElement();
-            final String name = entry.getName();
-            outputJar.putNextEntry(new ZipEntry(name));
-            if (name.equalsIgnoreCase("AndroidManifest.xml")) {
-                FileInputStream newManifest = new FileInputStream(tmpManifestFile);
-                StreamUtils.copy(newManifest, outputJar);
-                newManifest.close();
-            } else if (name.equalsIgnoreCase("classes.dex")) {
-                FileInputStream newClasses = new FileInputStream(tmpClassesDex);
-                StreamUtils.copy(newClasses, outputJar);
-                newClasses.close();
-            } else {
-                final InputStream entryInputStream = inputJar.getInputStream(entry);
-                StreamUtils.copy(entryInputStream, outputJar);
-                entryInputStream.close();
+        try(ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile))) {
+            Enumeration<JarEntry> entries = inputJar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                final String name = entry.getName();
+                outputJar.putNextEntry(new ZipEntry(name));
+                if (name.equalsIgnoreCase("AndroidManifest.xml"))
+                    try (final FileInputStream newManifest = new FileInputStream(tmpManifestFile)) {
+                        StreamUtils.copy(newManifest, outputJar);
+                    }
+                else if (name.equalsIgnoreCase("classes.dex"))
+                    try (final FileInputStream newClasses = new FileInputStream(tmpClassesDex)) {
+                        StreamUtils.copy(newClasses, outputJar);
+                    }
+                else
+                    try (final InputStream entryInputStream = inputJar.getInputStream(entry)) {
+                        StreamUtils.copy(entryInputStream, outputJar);
+                    }
+                outputJar.closeEntry();
             }
-            outputJar.closeEntry();
         }
-        outputJar.close();
     }
 
     private File stripPermissionsFromManifest(Set<String> permissionsToRemove) throws IOException {
