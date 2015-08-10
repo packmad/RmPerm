@@ -19,7 +19,7 @@ class Main {
     private static final String OPTION_VERBOSE = "verbose";
     private static final String OPTION_DEBUG = "debug";
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
-    private static final String OPTION_OUTPUT = "output-apk";
+    private static final String OPTION_OUTPUT = "output";
     private static final String OPTION_PERMISSIONS = "permissions";
     private static final String OPTION_HELP = "help";
     private static final String OPTION_NO_AUTO_REMOVE_VOID = "no-auto-remove";
