@@ -13,16 +13,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 class Main {
-    private static final String OPTION_REMOVE = "remove";
-    private static final String OPTION_LIST = "list";
-    private static final String OPTION_INPUT = "input";
-    private static final String OPTION_VERBOSE = "verbose";
-    private static final String OPTION_DEBUG = "debug";
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
+    private static final String OPTION_DEBUG = "debug";
+    private static final String OPTION_HELP = "help";
+    private static final String OPTION_INPUT = "input";
+    private static final String OPTION_LIST = "list";
+    private static final String OPTION_NO_AUTO_REMOVE_VOID = "no-auto-remove";
     private static final String OPTION_OUTPUT = "output";
     private static final String OPTION_PERMISSIONS = "permissions";
-    private static final String OPTION_HELP = "help";
-    private static final String OPTION_NO_AUTO_REMOVE_VOID = "no-auto-remove";
+    private static final String OPTION_REMOVE = "remove";
+    private static final String OPTION_STATISTICS = "statistics";
+    private static final String OPTION_VERBOSE = "verbose";
 
     private final IOutput out;
     private final CommandLine cmdLine;
@@ -30,6 +31,7 @@ class Main {
     private final String outApkFilename;
     private final String customMethodsFilename;
     private final String csvPermissionsToRemove;
+    private final String folderToAnalyze;
     private final boolean noAutoRemoveVoid;
 
     public static void main(String[] args) {
@@ -57,6 +59,7 @@ class Main {
         customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
         csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
         noAutoRemoveVoid = cmdLine.hasOption(OPTION_NO_AUTO_REMOVE_VOID);
+        folderToAnalyze = cmdLine.getOptionValue(OPTION_STATISTICS);
     }
 
     private void main() {
@@ -72,8 +75,7 @@ class Main {
             if (thereAreNonsensicalOptions)
                 return;
             listPermissions();
-        } else {
-            assert cmdLine.hasOption(OPTION_REMOVE);
+        } else if (cmdLine.hasOption(OPTION_REMOVE)) {
             if (outApkFilename == null || customMethodsFilename == null || csvPermissionsToRemove == null) {
                 out.printf(IOutput.Level.ERROR,
                            "Arguments --%s, --%s and --%s are required when using --%s\n",
@@ -90,6 +92,10 @@ class Main {
             } catch (Exception e) {
                 out.printf(IOutput.Level.ERROR, "Error: %s\n", e.getMessage());
             }
+        } else {
+            assert cmdLine.hasOption(OPTION_STATISTICS);
+            PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze));
+            out.printf(IOutput.Level.NORMAL, ps.toString());
         }
     }
 
@@ -241,19 +247,24 @@ class Main {
         return cmdline;
     }
 
-    private static Options SetupOptions() {Option r = new Option(OPTION_REMOVE.substring(0, 1), "Remove permissions");
+    private static Options SetupOptions() {
+        Option r = new Option(OPTION_REMOVE.substring(0, 1), "Remove permissions");
         r.setLongOpt(OPTION_REMOVE);
         Option l = new Option(OPTION_LIST.substring(0, 1), "List permissions");
         l.setLongOpt(OPTION_LIST);
+        Option s = new Option(OPTION_STATISTICS.substring(0, 1), "Statistics of his APKs");
+        s.setArgs(1);
+        s.setArgName("Folder-path");
+        s.setLongOpt(OPTION_STATISTICS);
         OptionGroup g = new OptionGroup();
         g.addOption(r)
          .addOption(l)
+         .addOption(s)
          .setRequired(true);
         Option i = new Option(OPTION_INPUT.substring(0, 1), "Input APK file");
         i.setArgs(1);
         i.setArgName("APK-filename");
         i.setLongOpt(OPTION_INPUT);
-        i.setRequired(true);
         Option v = new Option(OPTION_VERBOSE.substring(0, 1), "Verbose output");
         v.setLongOpt(OPTION_VERBOSE);
         Option d = new Option(OPTION_DEBUG.substring(0, 1), "Debug output (implies -v)");
@@ -274,6 +285,7 @@ class Main {
         p.setArgs(1);
         p.setArgName("CSV permission names");
         p.setLongOpt(OPTION_PERMISSIONS);
+
         final Options options = new Options();
         options.addOptionGroup(g)
                .addOption(h)
