@@ -37,7 +37,7 @@ public class PermissionsStatistics {
         return _permOccOrderedList;
     }
 
-    public PermissionsStatistics(File folderWithApks) throws UnsupportedOperationException {
+    public PermissionsStatistics(File folderWithApks) {
         if (folderWithApks.isDirectory()) {
             _folderWithApks = folderWithApks.toString();
             for (final File file : folderWithApks.listFiles()) {
@@ -59,9 +59,6 @@ public class PermissionsStatistics {
                 }
             }
             calculateStatistics();
-        }
-        else {
-            throw new UnsupportedOperationException(folderWithApks + " isn't a folder!");
         }
     }
 

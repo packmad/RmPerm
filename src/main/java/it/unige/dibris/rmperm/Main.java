@@ -42,7 +42,15 @@ class Main {
         }
     }
 
-    private static class BadCommandLineException extends Exception {}
+    private static class BadCommandLineException extends Exception {
+        private BadCommandLineException () {
+            super();
+        }
+
+        private BadCommandLineException (String message) {
+            super(message);
+        }
+    }
 
     private Main(String[] args) throws BadCommandLineException {
         cmdLine = parseCmdLine(args);
@@ -55,11 +63,28 @@ class Main {
             outputLevel = IOutput.Level.VERBOSE;
         out = new ConsoleOutput(outputLevel);
         inApkFilename = cmdLine.getOptionValue(OPTION_INPUT);
+        checkFileHasApkExtension(inApkFilename);
         outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
+        checkFileHasApkExtension(outApkFilename);
         customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
         csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
         noAutoRemoveVoid = cmdLine.hasOption(OPTION_NO_AUTO_REMOVE_VOID);
         folderToAnalyze = cmdLine.getOptionValue(OPTION_STATISTICS);
+        checkIsFolder(folderToAnalyze);
+    }
+
+    private void checkFileHasApkExtension(String filePath) throws BadCommandLineException {
+        File file = new File(filePath);
+        if (file.isDirectory())
+            throw new BadCommandLineException("This is a path for a directory '" + filePath + "'. File needed.");
+        if (!filePath.substring(filePath.lastIndexOf(".")).equals(".apk"))
+            throw new BadCommandLineException("The extension of this file '" + filePath + "' must be .apk");
+    }
+
+    private void checkIsFolder(String folderPath) throws BadCommandLineException {
+        File file = new File(folderPath);
+        if (!file.isDirectory())
+            throw new BadCommandLineException("This is a path for a file '" + folderPath + "'. Folder needed.");
     }
 
     private void main() {
