@@ -74,17 +74,21 @@ class Main {
     }
 
     private void checkFileHasApkExtension(String filePath) throws BadCommandLineException {
-        File file = new File(filePath);
-        if (file.isDirectory())
-            throw new BadCommandLineException("This is a path for a directory '" + filePath + "'. File needed.");
-        if (!filePath.substring(filePath.lastIndexOf(".")).equals(".apk"))
-            throw new BadCommandLineException("The extension of this file '" + filePath + "' must be .apk");
+        if (filePath != null) {
+            File file = new File(filePath);
+            if (file.isDirectory())
+                throw new BadCommandLineException("This is a path for a directory '" + filePath + "'. File needed.");
+            if (!filePath.substring(filePath.lastIndexOf(".")).equals(".apk"))
+                throw new BadCommandLineException("The extension of this file '" + filePath + "' must be .apk");
+        }
     }
 
     private void checkIsFolder(String folderPath) throws BadCommandLineException {
-        File file = new File(folderPath);
-        if (!file.isDirectory())
-            throw new BadCommandLineException("This is a path for a file '" + folderPath + "'. Folder needed.");
+        if (folderPath != null) {
+            File file = new File(folderPath);
+            if (!file.isDirectory())
+                throw new BadCommandLineException("This is a path for a file '" + folderPath + "'. Folder needed.");
+        }
     }
 
     private void main() {
@@ -119,8 +123,7 @@ class Main {
             }
         } else {
             assert cmdLine.hasOption(OPTION_STATISTICS);
-            PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze));
-            out.printf(IOutput.Level.NORMAL, ps.toString());
+            calculateStatistics();
         }
     }
 
@@ -251,6 +254,11 @@ class Main {
                    OPTION_PERMISSIONS,
                    String.join(",", permissions));
 
+    }
+
+    private void calculateStatistics() {
+        PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze));
+        out.printf(IOutput.Level.NORMAL, ps.toString());
     }
 
     private static CommandLine parseCmdLine(String[] args) {

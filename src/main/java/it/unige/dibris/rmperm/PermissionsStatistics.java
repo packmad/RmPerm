@@ -116,7 +116,7 @@ public class PermissionsStatistics {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("STATISTICS OF APKs PERMISSIONS STORED IN: '" + _folderWithApks + "'\n\n" +
+        sb.append("Statistics of APK's permissions stored in: '" + _folderWithApks + "'\n\n" +
                 "nOfAPKs='" + appnameToPerms.size() + "'\n" +
                 "avg='" + _avg + "'\n" +
                 "variance='" + _variance + "'\n" +
