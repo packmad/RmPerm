@@ -45,7 +45,7 @@ class PermissionMappingLoader {
                     List<String> params = DexMethod.parseAndConvertIntoDalvikTypes(methodMatcher.group("params"));
                     DexMethod dm = new DexMethod(definingClass, name, params, returnType);
                     if (!result.containsKey(dm))
-                        result.put(dm, new HashSet<>());
+                        result.put(dm, new HashSet<String>());
                     result.get(dm).add(permission);
                 }
             }
