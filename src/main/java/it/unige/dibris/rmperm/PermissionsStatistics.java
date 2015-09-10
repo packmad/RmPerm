@@ -15,6 +15,7 @@ public class PermissionsStatistics {
     private double _variance;
     private double _stdDeviation;
     private MaxMin _maxMin;
+    private final IOutput out;
 
 
     public double getAvg() {
@@ -37,7 +38,8 @@ public class PermissionsStatistics {
         return _permOccOrderedList;
     }
 
-    public PermissionsStatistics(File folderWithApks) {
+    public PermissionsStatistics(File folderWithApks, IOutput out) {
+        this.out = out;
         if (folderWithApks.isDirectory()) {
             _folderWithApks = folderWithApks.toString();
             for (final File file : folderWithApks.listFiles()) {
@@ -60,6 +62,9 @@ public class PermissionsStatistics {
             }
             calculateStatistics();
         }
+        else {
+            out.printf(IOutput.Level.ERROR, "You can also get statistics of APKs into a folder! Check your path!\n");
+        }
     }
 
     private void analyzesApk (String apk) {
@@ -70,7 +75,7 @@ public class PermissionsStatistics {
                 permissions.add(Permissions.simplifyPermissionName(p));
             appnameToPerms.put(apk, permissions);
         } catch (IOException e) {
-            //TODO stampa errore
+            out.printf(IOutput.Level.ERROR, "Can't read the APK: '"+ apk + "'\n");
         }
     }
 

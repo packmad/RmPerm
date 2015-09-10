@@ -257,7 +257,7 @@ class Main {
     }
 
     private void calculateStatistics() {
-        PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze));
+        PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze), out);
         out.printf(IOutput.Level.NORMAL, ps.toString());
     }
 
