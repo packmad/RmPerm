@@ -152,7 +152,7 @@ class BytecodeCustomizer {
         if (permissions == null)
             return invokeInstr;
         assert !permissions.isEmpty();
-        //out.printf(IOutput.Level.DEBUG, "Method %s.%s uses %s\n", r.getDefiningClass(), r.getName(), permissions);
+        out.printf(IOutput.Level.DEBUG, "Method %s.%s uses %s\n", r.getDefiningClass(), r.getName(), permissions);
         MethodReference redirection = redirections.get(r);
         if (redirection != null) {
             out.printf(IOutput.Level.DEBUG, "Applying redirection to %s\n", redirection);
