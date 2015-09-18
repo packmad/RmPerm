@@ -12,7 +12,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-class Main {
+public class Main {
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
     private static final String OPTION_DEBUG = "debug";
     private static final String OPTION_HELP = "help";
