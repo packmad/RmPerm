@@ -15,7 +15,7 @@ class PermissionMappingLoader {
 
     private static final Pattern permPattern = Pattern.compile("^Permission:(android.permission.[A-Z_]*)$");
     private static final Pattern methodPattern = Pattern.compile(
-            "<(?<defClass>(?:\\w|\\.)+): (?<retType>(?:\\w|\\.)+) (?<name>(?:\\w|\\.)+)\\((?<params>[^)]*)\\)>.*");
+            "<((?:\\w|\\.)+): ((?:\\w|\\.)+) ((?:\\w|\\.)+)\\(([^)]*)\\)>.*");
 
     private final IOutput out;
 
@@ -39,10 +39,10 @@ class PermissionMappingLoader {
                     continue;
                 Matcher methodMatcher = methodPattern.matcher(line);
                 if (methodMatcher.matches()) {
-                    String definingClass = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group("defClass"));
-                    String returnType = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group("retType"));
-                    String name = methodMatcher.group("name");
-                    List<String> params = DexMethod.parseAndConvertIntoDalvikTypes(methodMatcher.group("params"));
+                    String definingClass = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group(1));
+                    String returnType = DexMethod.fromJavaTypeToDalvikType(methodMatcher.group(2));
+                    String name = methodMatcher.group(3);
+                    List<String> params = DexMethod.parseAndConvertIntoDalvikTypes(methodMatcher.group(4));
                     DexMethod dm = new DexMethod(definingClass, name, params, returnType);
                     if (!result.containsKey(dm))
                         result.put(dm, new HashSet<String>());
