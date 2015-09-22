@@ -1,14 +1,14 @@
 package it.unige.dibris.rmperm;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 
 public class PermissionsStatistics {
-    private final Map<String, List<String>> appnameToPerms = new HashMap<>();
-    private final Map<String, PermOcc> permToOccurrences = new HashMap<>();
+    private final Map<String, List<String>> _appnameToPerms = new HashMap<>();
+    private final Map<String, List<String>> _permToAppnames = new HashMap<>();
+    private final Map<String, PermOcc> _permToOccurrences = new HashMap<>();
     private final List<PermOcc> _permOccOrderedList = new ArrayList<>();
     private String _folderWithApks;
     private double _avg;
@@ -50,13 +50,13 @@ public class PermissionsStatistics {
                     }
                 }
             }
-            for (List<String> perms : appnameToPerms.values()) {
+            for (List<String> perms : _appnameToPerms.values()) {
                 for (String p : perms) {
-                    if (permToOccurrences.containsKey(p)) {
-                        permToOccurrences.get(p).incrementOcc();
+                    if (_permToOccurrences.containsKey(p)) {
+                        _permToOccurrences.get(p).incrementOcc();
                     }
                     else {
-                        permToOccurrences.put(p, new PermOcc(p));
+                        _permToOccurrences.put(p, new PermOcc(p));
                     }
                 }
             }
@@ -71,9 +71,17 @@ public class PermissionsStatistics {
         try {
             AndroidManifest manifest = AndroidManifest.extractManifest(apk);
             List<String> permissions = new ArrayList<>();
-            for (String p : manifest.getPermissions())
-                permissions.add(Permissions.simplifyPermissionName(p));
-            appnameToPerms.put(apk, permissions);
+            for (String p : manifest.getPermissions()) {
+                String simplePerm = Permissions.simplifyPermissionName(p);
+                permissions.add(simplePerm);
+                if (!_permToAppnames.containsKey(simplePerm)) {
+                    _permToAppnames.put(simplePerm, new ArrayList<String>());
+                }
+                if (!_permToAppnames.get(simplePerm).contains(apk)) {
+                    _permToAppnames.get(simplePerm).add(apk);
+                }
+            }
+            _appnameToPerms.put(apk, permissions);
         } catch (IOException e) {
             out.printf(IOutput.Level.ERROR, "Can't read the APK: '"+ apk + "'\n");
         }
@@ -82,23 +90,23 @@ public class PermissionsStatistics {
 
     private void calculateStatistics() {
         double sum = 0.0;
-        for (List<String> perms : appnameToPerms.values()) {
+        for (List<String> perms : _appnameToPerms.values()) {
             sum += perms.size();
         }
-        _avg = sum / appnameToPerms.size();
+        _avg = sum / _appnameToPerms.size();
 
         sum = 0.0;
-        for (List<String> perms : appnameToPerms.values()) {
+        for (List<String> perms : _appnameToPerms.values()) {
             sum += Math.pow((perms.size() - _avg), 2);
         }
-        _variance = sum / (appnameToPerms.size()-1);
+        _variance = sum / (_appnameToPerms.size()-1);
         _stdDeviation = Math.sqrt(_variance);
 
         int max=0, min=Integer.MAX_VALUE, occ;
         String maxName, minName;
         maxName = minName = "";
-        for (String permName : appnameToPerms.keySet()) {
-            List<String> perms = appnameToPerms.get(permName);
+        for (String permName : _appnameToPerms.keySet()) {
+            List<String> perms = _appnameToPerms.get(permName);
             occ = perms.size();
             if (occ > max) {
                 max = occ;
@@ -112,7 +120,7 @@ public class PermissionsStatistics {
         _maxMin = new MaxMin(maxName, max, minName, min);
 
 
-        for (PermOcc po : permToOccurrences.values()) {
+        for (PermOcc po : _permToOccurrences.values()) {
             _permOccOrderedList.add(po);
         }
         _permOccOrderedList.sort(new PermOcc.OccurrencesComparator());
@@ -122,7 +130,7 @@ public class PermissionsStatistics {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Statistics of APK's permissions stored in: '" + _folderWithApks + "'\n\n" +
-                "nOfAPKs='" + appnameToPerms.size() + "'\n" +
+                "nOfAPKs='" + _appnameToPerms.size() + "'\n" +
                 "avg='" + _avg + "'\n" +
                 "variance='" + _variance + "'\n" +
                 "stdDeviation='" + _stdDeviation + "'\n" +
