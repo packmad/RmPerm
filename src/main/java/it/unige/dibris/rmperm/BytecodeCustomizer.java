@@ -11,6 +11,7 @@ import org.jf.dexlib2.iface.DexFile;
 import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.iface.MethodImplementation;
 import org.jf.dexlib2.iface.instruction.Instruction;
+import org.jf.dexlib2.iface.instruction.formats.Instruction35c;
 import org.jf.dexlib2.iface.reference.MethodReference;
 import org.jf.dexlib2.immutable.ImmutableClassDef;
 import org.jf.dexlib2.immutable.ImmutableMethod;
@@ -130,8 +131,8 @@ class BytecodeCustomizer {
         for (Instruction instruction : origImplementation.getInstructions()) {
             ++i;
             if (instruction.getOpcode() == Opcode.INVOKE_VIRTUAL) {
-                BuilderInstruction35c invokeVirtualInstruction = (BuilderInstruction35c) instruction;
-                BuilderInstruction35c newInstruction = checkInstruction(invokeVirtualInstruction);
+                Instruction35c invokeVirtualInstruction = (Instruction35c) instruction;
+                Instruction35c newInstruction = checkInstruction(invokeVirtualInstruction);
                 if (newInstruction == invokeVirtualInstruction)
                     continue;
                 if (newImplementation==null)
@@ -142,13 +143,13 @@ class BytecodeCustomizer {
                     continue;
                 }
                 ++nRedirected;
-                newImplementation.replaceInstruction(i, newInstruction);
+                newImplementation.replaceInstruction(i, (BuilderInstruction35c)newInstruction);
             }
         }
         return newImplementation!=null ? newImplementation : origImplementation;
     }
 
-    private BuilderInstruction35c checkInstruction(BuilderInstruction35c invokeInstr) {
+    private Instruction35c checkInstruction(Instruction35c invokeInstr) {
         MethodReference r = (MethodReference) invokeInstr.getReference();
         Set<String> permissions = apiToPermissions.get(r);
         if (permissions == null)
