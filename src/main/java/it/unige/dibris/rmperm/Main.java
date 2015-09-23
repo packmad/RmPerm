@@ -257,7 +257,7 @@ public class Main {
     }
 
     private void calculateStatistics() {
-        PermissionsStatistics ps = new PermissionsStatistics(new File(folderToAnalyze), out);
+        PermissionStatistics ps = new PermissionStatistics(new File(folderToAnalyze), out);
         out.printf(IOutput.Level.NORMAL, ps.toString());
     }
 
@@ -285,7 +285,7 @@ public class Main {
         r.setLongOpt(OPTION_REMOVE);
         Option l = new Option(OPTION_LIST.substring(0, 1), "List permissions");
         l.setLongOpt(OPTION_LIST);
-        Option s = new Option(OPTION_STATISTICS.substring(0, 1), "Statistics of his APKs");
+        Option s = new Option(OPTION_STATISTICS.substring(0, 1), "Statistics of contained APKs");
         s.setArgs(1);
         s.setArgName("Folder-path");
         s.setLongOpt(OPTION_STATISTICS);

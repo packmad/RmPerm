@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.*;
 
 
-public class PermissionsStatistics {
+public class PermissionStatistics {
     private final Map<String, List<String>> _appnameToPerms = new HashMap<>();
     private final Map<String, List<String>> _permToAppnames = new HashMap<>();
     private final Map<String, PermOcc> _permToOccurrences = new HashMap<>();
@@ -38,7 +38,7 @@ public class PermissionsStatistics {
         return _permOccOrderedList;
     }
 
-    public PermissionsStatistics(File folderWithApks, IOutput out) {
+    public PermissionStatistics(File folderWithApks, IOutput out) {
         this.out = out;
         if (folderWithApks.isDirectory()) {
             _folderWithApks = folderWithApks.toString();
