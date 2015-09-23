@@ -125,15 +125,17 @@ class BytecodeCustomizer {
     }
 
     private MethodImplementation searchAndReplaceInvocations(MethodImplementation origImplementation) {
-        MutableMethodImplementation newImplementation = new MutableMethodImplementation(origImplementation);
-        List<BuilderInstruction> instructions = newImplementation.getInstructions();
-        for (int i = 0; i < instructions.size(); i++) {
-            Instruction instruction = instructions.get(i);
+        MutableMethodImplementation newImplementation = null;
+        int i = -1;
+        for (Instruction instruction : origImplementation.getInstructions()) {
+            ++i;
             if (instruction.getOpcode() == Opcode.INVOKE_VIRTUAL) {
                 BuilderInstruction35c invokeVirtualInstruction = (BuilderInstruction35c) instruction;
                 BuilderInstruction35c newInstruction = checkInstruction(invokeVirtualInstruction);
                 if (newInstruction == invokeVirtualInstruction)
                     continue;
+                if (newImplementation==null)
+                    newImplementation = new MutableMethodImplementation(origImplementation);
                 if (newInstruction == null) {
                     ++nRemoved;
                     newImplementation.removeInstruction(i--);
@@ -143,7 +145,7 @@ class BytecodeCustomizer {
                 newImplementation.replaceInstruction(i, newInstruction);
             }
         }
-        return newImplementation;
+        return newImplementation!=null ? newImplementation : origImplementation;
     }
 
     private BuilderInstruction35c checkInstruction(BuilderInstruction35c invokeInstr) {
