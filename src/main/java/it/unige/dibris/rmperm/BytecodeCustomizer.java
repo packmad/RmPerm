@@ -103,6 +103,10 @@ class BytecodeCustomizer {
                 continue;
             }
             MethodImplementation customImpl = searchAndReplaceInvocations(implementation);
+            if (customImpl==implementation) {
+                methods.add(method);
+                continue;
+            }
             modifiedMethod = true;
             final ImmutableMethod newMethod = new ImmutableMethod(method.getDefiningClass(),
                                                                   method.getName(),
