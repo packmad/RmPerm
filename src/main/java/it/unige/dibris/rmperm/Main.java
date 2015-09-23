@@ -80,7 +80,8 @@ public class Main {
             File file = new File(filePath);
             if (file.isDirectory())
                 throw new BadCommandLineException("This is a path for a directory '" + filePath + "'. File needed.");
-            if (!filePath.substring(filePath.lastIndexOf(".")).equals(".apk"))
+            final int indexOfDot = filePath.lastIndexOf(".");
+            if (indexOfDot==-1 || !filePath.substring(indexOfDot).equalsIgnoreCase(".apk"))
                 throw new BadCommandLineException("The extension of this file '" + filePath + "' must be .apk");
         }
     }
