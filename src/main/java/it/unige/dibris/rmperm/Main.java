@@ -38,7 +38,9 @@ public class Main {
         try {
             new Main(args).main();
         } catch (BadCommandLineException e) {
-            // NOP
+            final String message = e.getMessage();
+            if (message!=null)
+                System.err.println(message);
         }
     }
 
