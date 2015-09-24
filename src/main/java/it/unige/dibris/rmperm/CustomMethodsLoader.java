@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.*;
 
 class CustomMethodsLoader {
+    private static final String AUXILIARY_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/AuxiliaryClass;";
     private static final String CUSTOM_METHOD_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/CustomMethodClass;";
     private static final String METHOD_PERMISSION_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/MethodPermission;";
     private static final String METHOD_ANNOTATION_PERMISSION_ELEMENT = "permission";
@@ -143,9 +144,15 @@ class CustomMethodsLoader {
 
     private Set<ClassDef> getAnnotatedClasses(DexFile dexFile) {
         Set<ClassDef> result = new HashSet<>();
-        for (ClassDef classDef : dexFile.getClasses())
+        outer:
+        for (ClassDef classDef : dexFile.getClasses()) {
             for (Annotation a : classDef.getAnnotations()) {
-                if (a.getType().equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
+                final String type = a.getType();
+                if (type.equals(AUXILIARY_CLASS_ANNOTATION)) {
+                    result.add(classDef);
+                    continue outer;
+                }
+                if (type.equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
                     if (AccessFlags.PUBLIC.isSet(classDef.getAccessFlags()))
                         result.add(classDef);
                     else
@@ -153,6 +160,7 @@ class CustomMethodsLoader {
                     break;
                 }
             }
+        }
         return result;
     }
 
