@@ -144,20 +144,14 @@ class CustomMethodsLoader {
 
     private Set<ClassDef> getAnnotatedClasses(DexFile dexFile) {
         Set<ClassDef> result = new HashSet<>();
-        outer:
         for (ClassDef classDef : dexFile.getClasses()) {
             for (Annotation a : classDef.getAnnotations()) {
                 final String type = a.getType();
-                if (type.equals(AUXILIARY_CLASS_ANNOTATION)) {
-                    result.add(classDef);
-                    continue outer;
-                }
-                if (type.equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
+                if (type.equals(AUXILIARY_CLASS_ANNOTATION) || type.equals(CUSTOM_METHOD_CLASS_ANNOTATION)) {
                     if (AccessFlags.PUBLIC.isSet(classDef.getAccessFlags()))
                         result.add(classDef);
                     else
                         PrintWarning("ignoring class " + classDef + " because it is not public");
-                    break;
                 }
             }
         }
