@@ -247,15 +247,19 @@ public class Main {
             return;
         }
         out.printf(IOutput.Level.NORMAL, "Permissions of %s:\n", inApkFilename);
-        for (String p : permissions)
+        final StringBuilder sb = new StringBuilder();
+        for (String p : permissions) {
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
+            sb.append(p + ",");
+        }
         out.printf(IOutput.Level.NORMAL,
                    "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",
                    OPTION_REMOVE,
                    OPTION_INPUT,
                    inApkFilename,
                    OPTION_PERMISSIONS,
-                   String.join(",", permissions));
+                   sb.toString() // String.join(",", permissions)) // Android compatibility
+        );
 
     }
 
