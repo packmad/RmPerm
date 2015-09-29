@@ -25,7 +25,6 @@ public class Main {
     private static final String OPTION_STATISTICS = "statistics";
     private static final String OPTION_VERBOSE = "verbose";
 
-    private final IOutput out;
     private final CommandLine cmdLine;
     private final String inApkFilename;
     private final String outApkFilename;
@@ -33,15 +32,32 @@ public class Main {
     private final String csvPermissionsToRemove;
     private final String folderToAnalyze;
     private final boolean noAutoRemoveVoid;
+    private IOutput out;
 
     public static void main(String[] args) {
         try {
             new Main(args).main();
         } catch (BadCommandLineException e) {
             final String message = e.getMessage();
-            if (message!=null)
+            if (message != null)
                 System.err.println(message);
         }
+    }
+
+    public static void androidMain(IOutput iOutput, String[] args) {
+        try {
+            Main main = new Main(args);
+            main.setIOutput(iOutput);
+            main.main();
+        } catch (BadCommandLineException e) {
+            final String message = e.getMessage();
+            if (message != null)
+                System.err.println(message);
+        }
+    }
+
+    public void setIOutput(IOutput iOutput) {
+        out = iOutput;
     }
 
     private static class BadCommandLineException extends Exception {
@@ -63,7 +79,7 @@ public class Main {
             outputLevel = IOutput.Level.DEBUG;
         else if (cmdLine.hasOption(OPTION_VERBOSE))
             outputLevel = IOutput.Level.VERBOSE;
-        out = new ConsoleOutput(outputLevel);
+        setIOutput(new ConsoleOutput(outputLevel));
         inApkFilename = cmdLine.getOptionValue(OPTION_INPUT);
         checkFileHasApkExtension(inApkFilename);
         outApkFilename = cmdLine.getOptionValue(OPTION_OUTPUT);
@@ -78,19 +94,25 @@ public class Main {
     private void checkFileHasApkExtension(String filePath) throws BadCommandLineException {
         if (filePath != null) {
             File file = new File(filePath);
-            if (file.isDirectory())
-                throw new BadCommandLineException("This is a path for a directory '" + filePath + "'. File needed.");
+            if (file.isDirectory()) {
+                out.printf(IOutput.Level.ERROR, "This is a path of a directory '%s'. File needed.", filePath);
+                throw new BadCommandLineException();
+            }
             final int indexOfDot = filePath.lastIndexOf(".");
-            if (indexOfDot==-1 || !filePath.substring(indexOfDot).equalsIgnoreCase(".apk"))
-                throw new BadCommandLineException("The extension of this file '" + filePath + "' must be .apk");
+            if (indexOfDot==-1 || !filePath.substring(indexOfDot).equalsIgnoreCase(".apk")) {
+                out.printf(IOutput.Level.ERROR, "The extension of the file '%s' must be '.apk'.", filePath);
+                throw new BadCommandLineException();
+            }
         }
     }
 
     private void checkIsFolder(String folderPath) throws BadCommandLineException {
         if (folderPath != null) {
             File file = new File(folderPath);
-            if (!file.isDirectory())
-                throw new BadCommandLineException("This is a path for a file '" + folderPath + "'. Folder needed.");
+            if (!file.isDirectory()) {
+                out.printf(IOutput.Level.ERROR, "This is a path for a file '%s'. Folder needed.", folderPath);
+                throw new BadCommandLineException();
+            }
         }
     }
 
@@ -258,7 +280,7 @@ public class Main {
                    OPTION_INPUT,
                    inApkFilename,
                    OPTION_PERMISSIONS,
-                   sb.toString() // String.join(",", permissions)) // Android compatibility
+                   sb.toString() // removed String.join(",", permissions)) for Android compatibility
         );
 
     }
