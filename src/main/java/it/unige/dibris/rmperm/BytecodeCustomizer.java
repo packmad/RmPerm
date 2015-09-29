@@ -3,7 +3,6 @@ package it.unige.dibris.rmperm;
 
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcode;
-import org.jf.dexlib2.builder.BuilderInstruction;
 import org.jf.dexlib2.builder.MutableMethodImplementation;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction35c;
 import org.jf.dexlib2.iface.ClassDef;
