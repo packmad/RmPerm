@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.*;
 
 
-public class PermissionStatistics {
+class PermissionStatistics {
     private final Map<String, List<String>> _appnameToPerms = new HashMap<>();
     private final Map<String, List<String>> _permToAppnames = new HashMap<>();
     private final Map<String, PermOcc> _permToOccurrences = new HashMap<>();
