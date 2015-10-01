@@ -1,6 +1,6 @@
 # RmPerm
 
-RmPerm is a command line tool, written in Java, for remove the permissions from an APK file replacing the API methods that use certain permissions with custom ones.
+RmPerm is a command line tool, written in Java, for remove the permissions from an APK file replacing (using [dexlib2](https://github.com/JesusFreke/smali/tree/master/dexlib2)) the API methods that use certain permissions with custom ones.
 
 You can create your custom methods [in this way](https://github.com/simoneaonzo/CustomApp).
 
