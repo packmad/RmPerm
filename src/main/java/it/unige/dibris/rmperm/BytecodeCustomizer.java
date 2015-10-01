@@ -138,7 +138,7 @@ class BytecodeCustomizer {
                 Instruction35c newInstruction = checkInstruction(invokeVirtualInstruction);
                 if (newInstruction == invokeVirtualInstruction)
                     continue;
-                if (newImplementation==null)
+                if (newImplementation == null)
                     newImplementation = new MutableMethodImplementation(origImplementation);
                 if (newInstruction == null) {
                     ++nRemoved;
