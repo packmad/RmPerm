@@ -55,7 +55,7 @@ If *Tr = void* the call can be easily removed, otherwise you have to define a st
 In this way for remove a permissionis is sufficient to create a class *H* with all methods of permissions you want to remove.
 
 
-### Example
+## Example
 
 Probably you have read anything of what I've written, ok I give to you an example with the method *isWifiEnabled* that use the permission ACCESS_WIFI_STATE:
 ```
