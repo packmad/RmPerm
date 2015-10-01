@@ -52,7 +52,7 @@ If *Tr = void* the call can be easily removed, otherwise you have to define a st
 
 **Tr Or = H.m(C c, T1 a1, ... , Tn an)**
 
-In this way for remove a permissionis sufficient to create a class *H* with all methods of permissions you want to remove.
+In this way for remove a permissionis is sufficient to create a class *H* with all methods of permissions you want to remove.
 
 
 ### Example
