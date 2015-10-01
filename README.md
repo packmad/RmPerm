@@ -54,3 +54,32 @@ If *Tr = void* the call can be easily removed, otherwise you have to define a st
 
 In this way for remove a permissionis sufficient to create a class *H* with all methods of permissions you want to remove.
 
+
+### Example
+
+Probably you have read anything of what I've written, ok I give to you an example with the method *isWifiEnabled* that use the permission ACCESS_WIFI_STATE:
+```
+WifiManager wifi = (WifiManager) getSystemService(Context.WIFI SERVICE);
+boolean b = wifi.isWifiEnabled();
+if (b) {...}
+```
+
+You define this method (you can find more of them [here](https://github.com/simoneaonzo/CustomApp/blob/master/app/src/main/java/com/custom/customapp/CustomMethods.java)):
+```
+@CustomMethodClass
+public class CustomMethods {
+    @MethodPermission(permission = "android.permission.ACCESS_WIFI_STATE", defClass ="android.net.wifi.WifiManager")
+    public static boolean isWifiEnabled(WifiManager wm) {
+        return false;
+    }
+}
+```
+Here I do something simple but you can instrument, log, hack, crack, trick, track... do what you want!
+
+
+Finally RmPerm transform it into:
+```
+WifiManager wifi = (WifiManager) getSystemService(Context.WIFI SERVICE);
+boolean b = CustomMethods.isWifiEnabled(wifi);
+```
+
