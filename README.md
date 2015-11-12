@@ -6,7 +6,7 @@ You can create your custom methods [in this way](https://github.com/simoneaonzo/
 
 You can download the JAR from [here](https://dl.dropboxusercontent.com/u/35859278/RmPerm.jar).
 
-I also released an [Android app](https://github.com/simoneaonzo/AndRmPerm) that uses it, but it is really disgusting, any help will be appreciated!
+I also released an [Android app](https://github.com/simoneaonzo/AndRmPerm) that uses it, it's GUI is disgusting, any help will be appreciated!
 
 ## Usage
 
