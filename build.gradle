@@ -8,7 +8,8 @@ repositories {
 }
 
 dependencies {
-    compile files('libs/smali-2.0.7.jar',
+    compile ('org.smali:dexlib2:2.1.1')
+    compile files(
             'libs/bcprov-jdk15on-152.jar',
             'libs/zipio-lib-1.8.jar',
             'libs/zipsigner-lib-1.17.jar',

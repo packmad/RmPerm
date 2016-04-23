@@ -17,15 +17,6 @@
     <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="module-library" exported="">
-      <library name="Gradle: smali-2.0.7">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/smali-2.0.7.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
       <library name="Gradle: zipio-lib-1.8">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/libs/zipio-lib-1.8.jar!/" />
@@ -61,5 +52,10 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="Gradle: org.smali:dexlib2:2.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: com.google.guava:guava:18.0" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: org.smali:util:2.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: com.google.code.findbugs:jsr305:1.3.9" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: commons-cli:commons-cli:1.2" level="project" />
   </component>
 </module>
