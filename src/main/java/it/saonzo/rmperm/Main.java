@@ -1,7 +1,13 @@
 package it.saonzo.rmperm;
 
 import kellinwood.security.zipsigner.ZipSigner;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
@@ -56,7 +62,7 @@ public class Main {
         }
     }
 
-    public void setIOutput(IOutput iOutput) {
+    private void setIOutput(IOutput iOutput) {
         out = iOutput;
     }
 
@@ -278,7 +284,8 @@ public class Main {
         final StringBuilder sb = new StringBuilder();
         for (String p : permissions) {
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
-            sb.append(p + ",");
+            sb.append(p);
+            sb.append(',');
         }
         out.printf(IOutput.Level.NORMAL,
                    "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",

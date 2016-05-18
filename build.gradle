@@ -20,7 +20,7 @@ dependencies {
 
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Main-Class': 'it.unige.dibris.rmperm.Main'
+        attributes 'Main-Class': 'it.saonzo.rmperm.Main'
     }
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

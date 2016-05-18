@@ -22,6 +22,15 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../libs/zipio-lib-1.8.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../libs/zipsigner-lib-1.17.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -32,15 +41,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../libs/kellinwood-logging-lib-1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../libs/zipio-lib-1.8.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
