@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 import java.io.IOException;
 import java.io.InputStream;

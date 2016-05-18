@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 class Permissions {
     private static final String STD_PERMISSION_PREFIX = "android.permission.";

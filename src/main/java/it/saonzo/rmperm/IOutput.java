@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 public interface IOutput {
     enum Level {

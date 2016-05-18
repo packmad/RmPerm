@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 class ConsoleOutput implements IOutput {
     private final Level level;

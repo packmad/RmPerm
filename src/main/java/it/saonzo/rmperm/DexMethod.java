@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 import org.jf.dexlib2.base.reference.BaseMethodReference;
 

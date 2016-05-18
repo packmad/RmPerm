@@ -1,4 +1,4 @@
-package it.unige.dibris.rmperm;
+package it.saonzo.rmperm;
 
 import kellinwood.security.zipsigner.ZipSigner;
 import org.apache.commons.cli.*;
@@ -158,7 +158,13 @@ public class Main {
         Map<MethodReference, MethodReference> redirections = new HashMap<>();
         List<ClassDef> customClasses = new ArrayList<>();
         new CustomMethodsLoader(out).load(customMethodsFilename, customClasses, redirections, permissionsToRemove);
-        out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections\n", redirections.size());
+
+        int nOfRedirections = redirections.size();
+        out.printf(IOutput.Level.VERBOSE, "Loaded %d redirections\n", nOfRedirections);
+        if (nOfRedirections <= 0) {
+            throw new BadCommandLineException("The Apk/Dex that you provided does not contain the definition of any method ");
+        }
+
         final Map<MethodReference, Set<String>> apiToPermissions;
         apiToPermissions = new PermissionMappingLoader(out).loadMapping(permissionsToRemove);
         final File tmpApkFile = File.createTempFile("OutputApk", null);
@@ -335,7 +341,7 @@ public class Main {
         h.setLongOpt(OPTION_HELP);
         Option n = new Option(OPTION_NO_AUTO_REMOVE_VOID.substring(0, 1), "Disable the auto-removal of void methods");
         n.setLongOpt(OPTION_NO_AUTO_REMOVE_VOID);
-        Option c = new Option(OPTION_CUSTOM_METHODS.substring(0, 1), "APK/Dex filename of custom classes");
+        Option c = new Option(OPTION_CUSTOM_METHODS.substring(0, 1), "APK/Dex file with custom classes");
         c.setArgs(1);
         c.setArgName("APK/DEX-filename");
         c.setLongOpt(OPTION_CUSTOM_METHODS);

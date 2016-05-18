@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/rmperm.iml" filepath="$PROJECT_DIR$/rmperm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rmperm.iml" filepath="$PROJECT_DIR$/.idea/modules/rmperm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rmperm_main.iml" filepath="$PROJECT_DIR$/.idea/modules/rmperm_main.iml" group="rmperm" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rmperm_test.iml" filepath="$PROJECT_DIR$/.idea/modules/rmperm_test.iml" group="rmperm" />
     </modules>
   </component>
 </project>
