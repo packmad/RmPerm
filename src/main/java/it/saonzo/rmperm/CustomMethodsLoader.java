@@ -10,9 +10,9 @@ import java.io.IOException;
 import java.util.*;
 
 class CustomMethodsLoader {
-    private static final String AUXILIARY_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/AuxiliaryClass;";
-    private static final String CUSTOM_METHOD_CLASS_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/CustomMethodClass;";
-    private static final String METHOD_PERMISSION_ANNOTATION = "Lit/unige/dibris/rmperm/annotations/MethodPermission;";
+    private static final String AUXILIARY_CLASS_ANNOTATION = "Lit/saonzo/rmperm/annotations/AuxiliaryClass;";
+    private static final String CUSTOM_METHOD_CLASS_ANNOTATION = "Lit/saonzo/rmperm/annotations/CustomMethodClass;";
+    private static final String METHOD_PERMISSION_ANNOTATION = "Lit/saonzo/rmperm/annotations/MethodPermission;";
     private static final String METHOD_ANNOTATION_PERMISSION_ELEMENT = "permission";
     private static final String METHOD_ANNOTATION_DEFINING_CLASS_ELEMENT = "defClass";
 
