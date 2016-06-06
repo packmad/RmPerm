@@ -56,6 +56,7 @@ public class Main {
     private final boolean adsRemoval;
     private IOutput out;
 
+
     public static void main(String[] args) throws NoSuchProviderException, NoSuchAlgorithmException {
         try {
             new Main(args).main();
@@ -65,6 +66,7 @@ public class Main {
                 System.err.println(message);
         }
     }
+
 
     public static void androidMain(IOutput iOutput, String[] args) {
         try {
@@ -78,9 +80,11 @@ public class Main {
         }
     }
 
+
     private void setIOutput(IOutput iOutput) {
         out = iOutput;
     }
+
 
     private static class BadCommandLineException extends Exception {
         private BadCommandLineException() {
@@ -91,6 +95,7 @@ public class Main {
             super(message);
         }
     }
+
 
     private Main(String[] args) throws BadCommandLineException {
         cmdLine = parseCmdLine(args);
