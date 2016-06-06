@@ -3,11 +3,19 @@ package it.saonzo.rmperm;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.value.DexBackedStringEncodedValue;
-import org.jf.dexlib2.iface.*;
+import org.jf.dexlib2.iface.Annotation;
+import org.jf.dexlib2.iface.AnnotationElement;
+import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.DexFile;
+import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 class CustomMethodsLoader {
     private static final String AUXILIARY_CLASS_ANNOTATION = "Lit/saonzo/rmperm/annotations/AuxiliaryClass;";
@@ -18,7 +26,7 @@ class CustomMethodsLoader {
 
     private final IOutput out;
 
-    public CustomMethodsLoader(IOutput out) {
+    CustomMethodsLoader(IOutput out) {
         this.out = out;
     }
 
@@ -26,7 +34,7 @@ class CustomMethodsLoader {
         final Method method;
         final Annotation annotation;
 
-        public MethodAnnotationPair(Method method, Annotation annotation) {
+        MethodAnnotationPair(Method method, Annotation annotation) {
             this.annotation = annotation;
             this.method = method;
         }
@@ -36,7 +44,7 @@ class CustomMethodsLoader {
         final String definingClass;
         final String permission;
 
-        public AnnotationElements(String definingClass, String permission) {
+        AnnotationElements(String definingClass, String permission) {
             this.definingClass = definingClass;
             this.permission = permission;
         }
@@ -64,10 +72,10 @@ class CustomMethodsLoader {
         return new AnnotationElements(definingClass, permission);
     }
 
-    public void load(String filename,
-                     List<ClassDef> customClasses,
-                     Map<MethodReference, MethodReference> redirections,
-                     Set<String> permissionToRemove
+    void load(String filename,
+              List<ClassDef> customClasses,
+              Map<MethodReference, MethodReference> redirections,
+              Set<String> permissionToRemove
     ) throws IOException {
         out.printf(IOutput.Level.VERBOSE, "Loading custom methods from %s\n", filename);
         DexFile dexFile = DexFileFactory.loadDexFile(filename, 19, false);

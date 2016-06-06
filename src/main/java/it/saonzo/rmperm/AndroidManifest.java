@@ -1,11 +1,20 @@
 package it.saonzo.rmperm;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Stack;
 import java.util.jar.JarFile;
 
 class AndroidManifest {
@@ -20,7 +29,7 @@ class AndroidManifest {
         read();
     }
 
-    public static AndroidManifest extractManifest(final String apkFilename) throws IOException {
+    static AndroidManifest extractManifest(final String apkFilename) throws IOException {
         final File tmpManifestFile = extractManifestToTemporaryFile(apkFilename);
         try {
             return new AndroidManifest(tmpManifestFile);
@@ -39,7 +48,7 @@ class AndroidManifest {
         return tmpManifestFile;
     }
 
-    public Iterable<String> getPermissions() {
+    Iterable<String> getPermissions() {
         return this.permissions.keySet();
     }
 
@@ -77,7 +86,7 @@ class AndroidManifest {
         }
     }
 
-    public void write(File file) throws IOException {
+    void write(File file) throws IOException {
         ResTarget tgt = new ResTargetImpl(file);
         try {
             writeTo(tgt);
@@ -98,7 +107,7 @@ class AndroidManifest {
         tgt.position(newLength);
     }
 
-    public boolean tryToRemovePermission(String permission) {
+    boolean tryToRemovePermission(String permission) {
         ResXmlStartElement element = permissions.get(permission);
         if (element == null)
             return false;
@@ -117,14 +126,14 @@ class AndroidManifest {
         private final int headerSize;  //u16
         private final long size; //u32
 
-        public ResChunkHeader(ResSource src) {
+        ResChunkHeader(ResSource src) {
             chunkOriginalStart = src.position();
             type = src.readU16();
             headerSize = src.readU16();
             size = src.readU32();
         }
 
-        public long writeTo(ResTarget tgt, long newSize) throws IOException {
+        long writeTo(ResTarget tgt, long newSize) throws IOException {
             tgt.writeU16(type);
             tgt.writeU16(headerSize);
             long newSizeAligned = newSize + 2 * ResTarget.LEN_U16 + ResTarget.LEN_U32;
@@ -134,7 +143,7 @@ class AndroidManifest {
             return newSizeAligned;
         }
 
-        public void writeTo(ResTarget tgt) throws IOException {
+        void writeTo(ResTarget tgt) throws IOException {
             tgt.writeU16(type);
             tgt.writeU16(headerSize);
             tgt.writeU32(size);
@@ -175,7 +184,7 @@ class AndroidManifest {
                     '}';
         }
 
-        public void writeTo(ResTarget tgt,
+        void writeTo(ResTarget tgt,
                             int newStringCount,
                             int newStringsStart,
                             int stylesStart,
@@ -234,7 +243,7 @@ class AndroidManifest {
                 tgt.writeU8(0);
         }
 
-        public ResStringPool(ResStringPoolHeader header, ResSource src) {
+        ResStringPool(ResStringPoolHeader header, ResSource src) {
             this.header = header;
             long stringOffsets[] = new long[(int) header.stringCount];
             this.styleOffsets = new long[(int) header.styleCount];
@@ -272,7 +281,7 @@ class AndroidManifest {
                     '}';
         }
 
-        public String lookup(long index) {
+        String lookup(long index) {
             if (index >= 0 && index < strings.size())
                 return strings.get((int) index);
             return "<UNKNOWN>";
@@ -282,11 +291,11 @@ class AndroidManifest {
     private class ResStringPoolRef {
         private final long index; // u32
 
-        public ResStringPoolRef(ResSource src) {
+        ResStringPoolRef(ResSource src) {
             this.index = src.readU32();
         }
 
-        public void writeTo(ResTarget tgt) throws IOException {
+        void writeTo(ResTarget tgt) throws IOException {
             tgt.writeU32(index);
         }
 
@@ -299,7 +308,7 @@ class AndroidManifest {
                     '}';
         }
 
-        public String lookup() {
+        String lookup() {
             return (4294967295L == index ? "<NONE>" : stringPool.lookup(index));
         }
     }
@@ -308,7 +317,7 @@ class AndroidManifest {
         private final ResChunkHeader header;
         private final long contentDataSize;
 
-        public UnknownResource(ResChunkHeader header, ResSource src) {
+        UnknownResource(ResChunkHeader header, ResSource src) {
             long startOfContent = src.position();
             this.header = header;
             this.contentDataSize = header.size - (startOfContent - header.chunkOriginalStart);
@@ -336,14 +345,14 @@ class AndroidManifest {
         private final long sourceLineNumber; // u32
         private final ResStringPoolRef comment;
 
-        public ResXmlTreeNodeHeader(ResChunkHeader header, ResSource src) {
+        ResXmlTreeNodeHeader(ResChunkHeader header, ResSource src) {
             this.header = header;
             this.sourceLineNumber = src.readU32();
             this.comment = new ResStringPoolRef(src);
             src.position(header.chunkOriginalStart + header.headerSize);
         }
 
-        public void writeTo(ResTarget tgt) throws IOException {
+        void writeTo(ResTarget tgt) throws IOException {
             header.writeTo(tgt);
             tgt.writeU32(sourceLineNumber);
             comment.writeTo(tgt);
@@ -372,7 +381,7 @@ class AndroidManifest {
             this.data = src.readU32();
         }
 
-        public void writeTo(ResTarget tgt) throws IOException {
+        void writeTo(ResTarget tgt) throws IOException {
             tgt.writeU16(size);
             tgt.writeU8(reserved);
             tgt.writeU8(type);
@@ -397,7 +406,7 @@ class AndroidManifest {
                     '}';
         }
 
-        public String asString() {
+        String asString() {
             if (3 != type) {
                 throw new IllegalStateException();
             }
@@ -425,7 +434,7 @@ class AndroidManifest {
             this.typedValue = new ResValue(src);
         }
 
-        public void writeTo(ResTarget tgt) throws IOException {
+        void writeTo(ResTarget tgt) throws IOException {
             this.namespace.writeTo(tgt);
             this.name.writeTo(tgt);
             this.rawValue.writeTo(tgt);
@@ -456,12 +465,12 @@ class AndroidManifest {
         private final ResXmlAttribute[] attributes;
         private ResXmlEndElement endElement;
 
-        public void setEndElement(ResXmlEndElement endElement) {
+        void setEndElement(ResXmlEndElement endElement) {
             assert this.endElement == null;
             this.endElement = endElement;
         }
 
-        public void remove() {
+        void remove() {
             assert this.endElement != null;
             assert this.name.lookup()
                             .equals(this.endElement.name.lookup());
@@ -484,7 +493,7 @@ class AndroidManifest {
                 this.attributes[i].writeTo(tgt);
         }
 
-        public ResXmlStartElement(ResChunkHeader chunkHeader, ResSource src) {
+        ResXmlStartElement(ResChunkHeader chunkHeader, ResSource src) {
             this.header = new ResXmlTreeNodeHeader(chunkHeader, src);
             this.namespace = new ResStringPoolRef(src);
             this.name = new ResStringPoolRef(src);
@@ -540,7 +549,7 @@ class AndroidManifest {
             name.writeTo(tgt);
         }
 
-        public ResXmlEndElement(ResChunkHeader chunkHeader, ResSource src) {
+        ResXmlEndElement(ResChunkHeader chunkHeader, ResSource src) {
             this.header = new ResXmlTreeNodeHeader(chunkHeader, src);
             this.namespace = new ResStringPoolRef(src);
             this.name = new ResStringPoolRef(src);
@@ -557,53 +566,53 @@ class AndroidManifest {
         }
     }
 
-    public static class ResSource {
+    private static class ResSource {
         final RandomAccessFile sourceFile;
         final MappedByteBuffer buffer;
 
-        public ResSource(File source) throws IOException {
+        ResSource(File source) throws IOException {
             this.sourceFile = new RandomAccessFile(source, "r");
             FileChannel inChannel = this.sourceFile.getChannel();
             this.buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
         }
 
-        public int readU8() {
+        int readU8() {
             return buffer.get() & 0xff;
         }
 
-        public int readU16() {
+        int readU16() {
             return (int) (buffer.getShort()) & 0xffff;
         }
 
-        public long readU32() {
+        long readU32() {
             return (long) buffer.getInt() & 0xffffffffL;
         }
 
-        public long position() {
+        long position() {
             return buffer.position();
         }
 
-        public void position(long l) {
+        void position(long l) {
             buffer.position((int) l);
         }
 
-        public CharBuffer asCharBuffer() {
+        CharBuffer asCharBuffer() {
             return buffer.asCharBuffer();
         }
 
-        public void get(byte[] data) {
+        void get(byte[] data) {
             buffer.get(data);
         }
 
-        public void copyTo(long len, ResTarget tgt) throws IOException {
+        void copyTo(long len, ResTarget tgt) throws IOException {
             for (long i = 0; i < len; i++) {
                 tgt.writeU8(this.readU8());
             }
         }
     }
 
-    public interface ResTarget {
+    interface ResTarget {
         int LEN_U32 = 4;
         int LEN_U16 = 2;
         int LEN_U8 = 1;
@@ -623,11 +632,11 @@ class AndroidManifest {
         void write(byte[] data) throws IOException;
     }
 
-    public static class ResTargetImpl implements ResTarget {
+    private static class ResTargetImpl implements ResTarget {
         private RandomAccessFile file;
         private final File outputFile;
 
-        public ResTargetImpl(File file) throws IOException {
+        ResTargetImpl(File file) throws IOException {
             outputFile = file;
             this.file = new RandomAccessFile(outputFile, "rw");
         }
