@@ -6,6 +6,8 @@ import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -22,6 +24,8 @@ public class Main {
     private static final String OPTION_OUTPUT = "output";
     private static final String OPTION_PERMISSIONS = "permissions";
     private static final String OPTION_REMOVE = "remove";
+    private static final String OPTION_REMOVE_ONLY_ADS = "removeads";
+    private static final String OPTION_ADSREMOVAL = "ads";
     private static final String OPTION_STATISTICS = "statistics";
     private static final String OPTION_VERBOSE = "verbose";
 
@@ -32,9 +36,10 @@ public class Main {
     private final String csvPermissionsToRemove;
     private final String folderToAnalyze;
     private final boolean noAutoRemoveVoid;
+    private final boolean adsRemoval;
     private IOutput out;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchProviderException, NoSuchAlgorithmException {
         try {
             new Main(args).main();
         } catch (BadCommandLineException e) {
@@ -87,6 +92,7 @@ public class Main {
         customMethodsFilename = cmdLine.getOptionValue(OPTION_CUSTOM_METHODS);
         csvPermissionsToRemove = cmdLine.getOptionValue(OPTION_PERMISSIONS);
         noAutoRemoveVoid = cmdLine.hasOption(OPTION_NO_AUTO_REMOVE_VOID);
+        adsRemoval = cmdLine.hasOption(OPTION_ADSREMOVAL);
         folderToAnalyze = cmdLine.getOptionValue(OPTION_STATISTICS);
         checkIsFolder(folderToAnalyze);
     }
@@ -106,6 +112,7 @@ public class Main {
         }
     }
 
+
     private void checkIsFolder(String folderPath) throws BadCommandLineException {
         if (folderPath != null) {
             File file = new File(folderPath);
@@ -116,28 +123,44 @@ public class Main {
         }
     }
 
-    private void main() {
+
+    private void chechNonsenseOptions(final String currentOption, List<String> forbiddenOptions) throws BadCommandLineException {
+        for (String option : forbiddenOptions) {
+            if (cmdLine.getOptionValue(option) != null) {
+                throw new BadCommandLineException(
+                        "Error: option " + option + " makes no sense when --" + currentOption + " is specified\n"
+                );
+            }
+        }
+    }
+
+
+    private void main() throws BadCommandLineException {
+        List<String> forbiddenOptions = new ArrayList<>();
+
         if (cmdLine.hasOption(OPTION_LIST)) {
-            final String[] nonsensicalOptions = {OPTION_OUTPUT, OPTION_CUSTOM_METHODS, OPTION_PERMISSIONS};
-            final String errorMsg = "Error: option --%s makes no sense when --%s is specified\n";
-            boolean thereAreNonsensicalOptions = false;
-            for (String nonsensicalOption : nonsensicalOptions)
-                if (cmdLine.getOptionValue(nonsensicalOption) != null) {
-                    out.printf(IOutput.Level.ERROR, errorMsg, nonsensicalOption, OPTION_LIST);
-                    thereAreNonsensicalOptions = true;
-                }
-            if (thereAreNonsensicalOptions)
-                return;
+            forbiddenOptions.add(OPTION_ADSREMOVAL);
+            forbiddenOptions.add(OPTION_CUSTOM_METHODS);
+            forbiddenOptions.add(OPTION_HELP);
+            forbiddenOptions.add(OPTION_OUTPUT);
+            forbiddenOptions.add(OPTION_PERMISSIONS);
+            forbiddenOptions.add(OPTION_REMOVE);
+            forbiddenOptions.add(OPTION_STATISTICS);
+            chechNonsenseOptions(OPTION_LIST, forbiddenOptions);
             listPermissions();
         } else if (cmdLine.hasOption(OPTION_REMOVE)) {
+            forbiddenOptions.add(OPTION_LIST);
+            forbiddenOptions.add(OPTION_REMOVE_ONLY_ADS);
+            forbiddenOptions.add(OPTION_STATISTICS);
+            chechNonsenseOptions(OPTION_REMOVE, forbiddenOptions);
             if (outApkFilename == null || customMethodsFilename == null || csvPermissionsToRemove == null) {
                 out.printf(IOutput.Level.ERROR,
                            "Arguments --%s, --%s and --%s are required when using --%s\n",
                            OPTION_OUTPUT,
                            OPTION_CUSTOM_METHODS,
                            OPTION_PERMISSIONS,
-                           OPTION_REMOVE);
-                return;
+                        OPTION_REMOVE);
+                throw new BadCommandLineException();
             }
             try {
                 removePermissions();
@@ -146,11 +169,43 @@ public class Main {
             } catch (Exception e) {
                 out.printf(IOutput.Level.ERROR, "Error: %s\n", e.getMessage());
             }
-        } else {
-            assert cmdLine.hasOption(OPTION_STATISTICS);
+        } else if (cmdLine.hasOption(OPTION_REMOVE_ONLY_ADS)) { // removes only ads, it doesn't remove any permissions
+            forbiddenOptions.add(OPTION_CUSTOM_METHODS);
+            forbiddenOptions.add(OPTION_HELP);
+            forbiddenOptions.add(OPTION_LIST);
+            forbiddenOptions.add(OPTION_PERMISSIONS);
+            forbiddenOptions.add(OPTION_REMOVE);
+            forbiddenOptions.add(OPTION_STATISTICS);
+            chechNonsenseOptions(OPTION_REMOVE_ONLY_ADS, forbiddenOptions);
+            if (outApkFilename == null) {
+                out.printf(IOutput.Level.ERROR, "Argument --%s is required when using --%s\n", OPTION_OUTPUT, OPTION_REMOVE);
+                throw new BadCommandLineException();
+            }
+            try {
+                removeAds();
+            } catch (Exception e) {
+                out.printf(IOutput.Level.ERROR, "Error: %s\n", e.getMessage());
+            }
+        }
+        else if (cmdLine.hasOption(OPTION_STATISTICS)) {
             calculateStatistics();
         }
     }
+
+    private void removeAds() throws Exception {
+        final File tmpApkFile = File.createTempFile("OutputApk", null);
+        tmpApkFile.deleteOnExit();
+        final File tmpClassesDex = File.createTempFile("NewClasseDex", null);
+        tmpClassesDex.deleteOnExit();
+
+        BytecodeCustomizer bc = new BytecodeCustomizer(new File(inApkFilename), tmpClassesDex, out);
+        bc.customize();
+
+        writeApk(tmpClassesDex, null, tmpApkFile);
+        signApk(tmpApkFile);
+
+    }
+
 
     private void removePermissions() throws Exception {
         Set<String> permissionsToRemove = parseCsvPermissions();
@@ -204,7 +259,7 @@ public class Main {
                 JarEntry entry = entries.nextElement();
                 final String name = entry.getName();
                 outputJar.putNextEntry(new ZipEntry(name));
-                if (name.equalsIgnoreCase("AndroidManifest.xml"))
+                if (name.equalsIgnoreCase("AndroidManifest.xml") && tmpManifestFile!=null)
                     try (final FileInputStream newManifest = new FileInputStream(tmpManifestFile)) {
                         StreamUtils.copy(newManifest, outputJar);
                     }
@@ -238,16 +293,18 @@ public class Main {
                                    Map<MethodReference, MethodReference> redirections,
                                    List<ClassDef> customClasses
     ) throws IOException {
-        File tmpClassesDex;
-        tmpClassesDex = File.createTempFile("NewClasseDex", null);
+        File tmpClassesDex = File.createTempFile("NewClasseDex", null);
         tmpClassesDex.deleteOnExit();
-        BytecodeCustomizer c = new BytecodeCustomizer(apiToPermissions,
-                                                      redirections,
-                                                      customClasses,
-                                                      new File(inApkFilename),
-                                                      tmpClassesDex,
-                                                      out,
-                                                      noAutoRemoveVoid);
+        BytecodeCustomizer c = new BytecodeCustomizer(
+                apiToPermissions,
+                redirections,
+                customClasses,
+                new File(inApkFilename),
+                tmpClassesDex,
+                out,
+                noAutoRemoveVoid,
+                adsRemoval
+        );
         c.customize();
         return tmpClassesDex;
     }
@@ -282,7 +339,7 @@ public class Main {
         }
         out.printf(IOutput.Level.NORMAL,
                    "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",
-                   OPTION_REMOVE,
+                OPTION_REMOVE,
                    OPTION_INPUT,
                    inApkFilename,
                    OPTION_PERMISSIONS,
@@ -316,8 +373,10 @@ public class Main {
     }
 
     private static Options SetupOptions() {
-        Option r = new Option(OPTION_REMOVE.substring(0, 1), "Remove permissions");
-        r.setLongOpt(OPTION_REMOVE);
+        Option rp = new Option(OPTION_REMOVE.substring(0, 1), "Remove");
+        rp.setLongOpt(OPTION_REMOVE);
+        Option ra = new Option("ra", "Remove only ads");
+        ra.setLongOpt(OPTION_REMOVE_ONLY_ADS);
         Option l = new Option(OPTION_LIST.substring(0, 1), "List permissions");
         l.setLongOpt(OPTION_LIST);
         Option s = new Option(OPTION_STATISTICS.substring(0, 1), "Statistics of contained APKs");
@@ -325,7 +384,8 @@ public class Main {
         s.setArgName("Folder-path");
         s.setLongOpt(OPTION_STATISTICS);
         OptionGroup g = new OptionGroup();
-        g.addOption(r)
+        g.addOption(rp)
+         .addOption(ra)
          .addOption(l)
          .addOption(s)
          .setRequired(true);
@@ -353,6 +413,9 @@ public class Main {
         p.setArgs(1);
         p.setArgName("CSV permission names");
         p.setLongOpt(OPTION_PERMISSIONS);
+        Option a = new Option(OPTION_ADSREMOVAL.substring(0, 1), "Enable ADs removal");
+        a.setArgs(0);
+        a.setLongOpt(OPTION_ADSREMOVAL);
 
         final Options options = new Options();
         options.addOptionGroup(g)
@@ -362,7 +425,8 @@ public class Main {
                .addOption(i)
                .addOption(c)
                .addOption(o)
-               .addOption(p);
+               .addOption(p)
+               .addOption(a);
         return options;
     }
 
