@@ -16,10 +16,16 @@ import org.jf.dexlib2.iface.reference.MethodReference;
 import org.jf.dexlib2.immutable.ImmutableClassDef;
 import org.jf.dexlib2.immutable.ImmutableMethod;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 class BytecodeCustomizer {
     private static final String LOADAD = "loadAd";
@@ -38,7 +44,7 @@ class BytecodeCustomizer {
     private int nRemoved;
 
 
-    public BytecodeCustomizer(File inputFile,
+    BytecodeCustomizer(File inputFile,
                               File outputDex,
                               IOutput out) {
         this.apiToPermissions = null;
@@ -53,7 +59,7 @@ class BytecodeCustomizer {
     }
 
 
-    public BytecodeCustomizer(Map<MethodReference, Set<String>> apiToPermissions,
+    BytecodeCustomizer(Map<MethodReference, Set<String>> apiToPermissions,
                               Map<MethodReference, MethodReference> redirections,
                               List<ClassDef> customClasses,
                               File inputFile,
@@ -73,7 +79,8 @@ class BytecodeCustomizer {
         this.onlyAdsRemoving = false;
     }
 
-    public void customize() throws IOException {
+
+    void customize() throws IOException {
         nRedirected = nRemoved = nNotRedirected = 0;
         final List<ClassDef> classes;
         if (customClasses != null)
@@ -98,6 +105,7 @@ class BytecodeCustomizer {
         }
         writeDexFile(classes);
     }
+
 
     private void writeDexFile(final List<ClassDef> classes) throws IOException {
         String outputFilename = outputDex.getCanonicalPath();
@@ -127,6 +135,7 @@ class BytecodeCustomizer {
             }
         });
     }
+
 
     private ClassDef customizeClass(ClassDef classDef) {
         List<Method> methods = new ArrayList<>();
@@ -164,6 +173,7 @@ class BytecodeCustomizer {
                                      methods);
     }
 
+
     private MethodImplementation searchAndReplaceInvocations(MethodImplementation origImplementation) {
         MutableMethodImplementation newImplementation = null;
         int i = -1;
@@ -190,16 +200,15 @@ class BytecodeCustomizer {
 
     /**
      * Check if the instruction must be rewritten
-     * @param invokeInstr
+     * @param invokeInstr the instruction that contains the method invocation
      * @return the new instruction if exists a redefinition for this invocation,
-     * null if the instruction must be removed,
+     * null if the instruction must be removed (like an AD loading),
      * the original parameter if there's nothing to do
      */
     private Instruction35c checkInstruction(final Instruction35c invokeInstr) {
         MethodReference mr = (MethodReference) invokeInstr.getReference();
-        if (removeAds && isLoadingAd(mr)) {
+        if (removeAds && isLoadingAd(mr))
             return null;
-        }
         if (onlyAdsRemoving)
             return invokeInstr;
         Set<String> permissions = apiToPermissions.get(mr);
@@ -236,7 +245,9 @@ class BytecodeCustomizer {
         String methName = mr.getName();
         String retType = mr.getReturnType();
         if (methName.equals(LOADAD) && defClass.startsWith("Lcom/google/android/gms/ads/") && retType.equals("V")) {
-            out.printf(IOutput.Level.DEBUG, "ADSRM: removing '%s' method defined in class '%s'\n", LOADAD, defClass);
+            out.printf(IOutput.Level.DEBUG,
+                    "ADSRM: removing '%s' method defined in class '%s'\n",
+                    LOADAD, defClass);
             return true;
         }
         return false;
