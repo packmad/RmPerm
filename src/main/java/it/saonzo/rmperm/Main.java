@@ -1,18 +1,35 @@
 package it.saonzo.rmperm;
 
-import kellinwood.security.zipsigner.ZipSigner;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import kellinwood.security.zipsigner.ZipSigner;
 
 public class Main {
     private static final String OPTION_CUSTOM_METHODS = "custom-methods";
@@ -39,6 +56,7 @@ public class Main {
     private final boolean adsRemoval;
     private IOutput out;
 
+
     public static void main(String[] args) throws NoSuchProviderException, NoSuchAlgorithmException {
         try {
             new Main(args).main();
@@ -49,6 +67,7 @@ public class Main {
         }
     }
 
+
     public static void androidMain(IOutput iOutput, String[] args) {
         try {
             Main main = new Main(args);
@@ -57,28 +76,31 @@ public class Main {
         } catch (BadCommandLineException e) {
             final String message = e.getMessage();
             if (message != null)
-                System.err.println(message);
+                iOutput.printf(IOutput.Level.ERROR, message);
         }
     }
 
-    public void setIOutput(IOutput iOutput) {
+
+    private void setIOutput(IOutput iOutput) {
         out = iOutput;
     }
 
+
     private static class BadCommandLineException extends Exception {
-        private BadCommandLineException () {
+        private BadCommandLineException() {
             super();
         }
 
-        private BadCommandLineException (String message) {
+        private BadCommandLineException(String message) {
             super(message);
         }
     }
 
+
     private Main(String[] args) throws BadCommandLineException {
         cmdLine = parseCmdLine(args);
         if (cmdLine == null)
-            throw new BadCommandLineException();
+            throw new BadCommandLineException("You haven't provided any command line argument");
         IOutput.Level outputLevel = IOutput.Level.NORMAL;
         if (cmdLine.hasOption(OPTION_DEBUG))
             outputLevel = IOutput.Level.DEBUG;
@@ -105,7 +127,7 @@ public class Main {
                 throw new BadCommandLineException();
             }
             final int indexOfDot = filePath.lastIndexOf(".");
-            if (indexOfDot==-1 || !filePath.substring(indexOfDot).equalsIgnoreCase(".apk")) {
+            if (indexOfDot == -1 || !filePath.substring(indexOfDot).equalsIgnoreCase(".apk")) {
                 out.printf(IOutput.Level.ERROR, "The extension of the file '%s' must be '.apk'.", filePath);
                 throw new BadCommandLineException();
             }
@@ -155,10 +177,10 @@ public class Main {
             chechNonsenseOptions(OPTION_REMOVE, forbiddenOptions);
             if (outApkFilename == null || customMethodsFilename == null || csvPermissionsToRemove == null) {
                 out.printf(IOutput.Level.ERROR,
-                           "Arguments --%s, --%s and --%s are required when using --%s\n",
-                           OPTION_OUTPUT,
-                           OPTION_CUSTOM_METHODS,
-                           OPTION_PERMISSIONS,
+                        "Arguments --%s, --%s and --%s are required when using --%s\n",
+                        OPTION_OUTPUT,
+                        OPTION_CUSTOM_METHODS,
+                        OPTION_PERMISSIONS,
                         OPTION_REMOVE);
                 throw new BadCommandLineException();
             }
@@ -186,11 +208,11 @@ public class Main {
             } catch (Exception e) {
                 out.printf(IOutput.Level.ERROR, "Error: %s\n", e.getMessage());
             }
-        }
-        else if (cmdLine.hasOption(OPTION_STATISTICS)) {
+        } else if (cmdLine.hasOption(OPTION_STATISTICS)) {
             calculateStatistics();
         }
     }
+
 
     private void removeAds() throws Exception {
         final File tmpApkFile = File.createTempFile("OutputApk", null);
@@ -242,6 +264,7 @@ public class Main {
         }
     }
 
+
     private void signApk(File tmpApkFile) throws Exception {
         ZipSigner zipSigner = new ZipSigner();
         zipSigner.setKeymode("auto-testkey");
@@ -250,16 +273,17 @@ public class Main {
         zipSigner.signZip(inputFilename, outApkFilename);
     }
 
+
     private void writeApk(File tmpClassesDex, File tmpManifestFile, File outApkFile) throws IOException {
         out.printf(IOutput.Level.VERBOSE, "Writing APK %s\n", outApkFile);
         JarFile inputJar = new JarFile(inApkFilename);
-        try(ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile))) {
+        try (ZipOutputStream outputJar = new ZipOutputStream(new FileOutputStream(outApkFile))) {
             Enumeration<JarEntry> entries = inputJar.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 final String name = entry.getName();
                 outputJar.putNextEntry(new ZipEntry(name));
-                if (name.equalsIgnoreCase("AndroidManifest.xml") && tmpManifestFile!=null)
+                if (name.equalsIgnoreCase("AndroidManifest.xml") && tmpManifestFile != null)
                     try (final FileInputStream newManifest = new FileInputStream(tmpManifestFile)) {
                         StreamUtils.copy(newManifest, outputJar);
                     }
@@ -276,6 +300,7 @@ public class Main {
         }
     }
 
+
     private File stripPermissionsFromManifest(Set<String> permissionsToRemove) throws IOException {
         AndroidManifest manifest = AndroidManifest.extractManifest(inApkFilename);
         for (String permission : permissionsToRemove) {
@@ -288,6 +313,7 @@ public class Main {
         manifest.write(tmpManifestFile);
         return tmpManifestFile;
     }
+
 
     private File customizeBytecode(Map<MethodReference, Set<String>> apiToPermissions,
                                    Map<MethodReference, MethodReference> redirections,
@@ -309,12 +335,14 @@ public class Main {
         return tmpClassesDex;
     }
 
+
     private Set<String> parseCsvPermissions() {
         Set<String> permissionsToRemove = new HashSet<>();
         for (String p : csvPermissionsToRemove.split(","))
             permissionsToRemove.add(Permissions.fullPermissionName(p));
         return permissionsToRemove;
     }
+
 
     private void listPermissions() {
         AndroidManifest manifest;
@@ -332,26 +360,30 @@ public class Main {
             return;
         }
         out.printf(IOutput.Level.NORMAL, "Permissions of %s:\n", inApkFilename);
+        // cannot use StringJoiner for Android java 1.7 compatibility
         final StringBuilder sb = new StringBuilder();
         for (String p : permissions) {
             out.printf(IOutput.Level.NORMAL, "%s\n", p);
-            sb.append(p + ",");
+            sb.append(p);
+            sb.append(',');
         }
         out.printf(IOutput.Level.NORMAL,
-                   "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",
+                "\nTo remove all of them you can pass the parameters:\n--%s --%s %s --%s %s\n",
                 OPTION_REMOVE,
-                   OPTION_INPUT,
-                   inApkFilename,
-                   OPTION_PERMISSIONS,
-                   sb.toString() // removed String.join(",", permissions)) for Android compatibility
+                OPTION_INPUT,
+                inApkFilename,
+                OPTION_PERMISSIONS,
+                sb.toString()
         );
 
     }
+
 
     private void calculateStatistics() {
         PermissionStatistics ps = new PermissionStatistics(new File(folderToAnalyze), out);
         out.printf(IOutput.Level.NORMAL, ps.toString());
     }
+
 
     private static CommandLine parseCmdLine(String[] args) {
         final Options options = SetupOptions();
@@ -372,6 +404,7 @@ public class Main {
         return cmdline;
     }
 
+
     private static Options SetupOptions() {
         Option rp = new Option(OPTION_REMOVE.substring(0, 1), "Remove");
         rp.setLongOpt(OPTION_REMOVE);
@@ -385,10 +418,10 @@ public class Main {
         s.setLongOpt(OPTION_STATISTICS);
         OptionGroup g = new OptionGroup();
         g.addOption(rp)
-         .addOption(ra)
-         .addOption(l)
-         .addOption(s)
-         .setRequired(true);
+                .addOption(ra)
+                .addOption(l)
+                .addOption(s)
+                .setRequired(true);
         Option i = new Option(OPTION_INPUT.substring(0, 1), "Input APK file");
         i.setArgs(1);
         i.setArgName("APK-filename");
@@ -419,14 +452,14 @@ public class Main {
 
         final Options options = new Options();
         options.addOptionGroup(g)
-               .addOption(h)
-               .addOption(v)
-               .addOption(d)
-               .addOption(i)
-               .addOption(c)
-               .addOption(o)
-               .addOption(p)
-               .addOption(a);
+                .addOption(h)
+                .addOption(v)
+                .addOption(d)
+                .addOption(i)
+                .addOption(c)
+                .addOption(o)
+                .addOption(p)
+                .addOption(a);
         return options;
     }
 
