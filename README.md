@@ -104,5 +104,6 @@ If this method isn't called the View doesn't load the AD, so, very simply:
   * that is defined in a class belonging to *com.google.android.gms.ads.* 
 
   * and its return type is *void* 
- I remove it.
+ 
+I remove it :)
 
