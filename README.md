@@ -35,11 +35,11 @@ N.b.: the square brackets indicate that it is an optional argument.
 There are four kinds of scenario:
 
 1. You want to see what permissions  are required by the APK:
-    --list
-    --input *file.apk*
+  --list
+  --input *file.apk*
 2. You want to remove certain permissions [and ADs] from the APK:
-    --remove
-    --input *file.apk*
+  --remove
+  --input *file.apk*
     --output *output.apk*
     --permissions *PERM1,PERM2,...,PERMN*
     --custom-methods *custom.apk | classes.dex*
