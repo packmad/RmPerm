@@ -99,9 +99,10 @@ All classes like [AdView](https://developers.google.com/android/reference/com/go
 
 If this method isn't called the View doesn't load the AD, so, very simply: 
 
-every time that I found a method called *loadAd* 
+  * every time that I found a method called *loadAd* 
 
-that is defined in a class belonging to *com.google.android.gms.ads.* 
+  * that is defined in a class belonging to *com.google.android.gms.ads.* 
 
-and its return type is *void* I remove it.
+  * and its return type is *void* 
+ I remove it.
 
