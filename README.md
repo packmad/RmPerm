@@ -38,18 +38,18 @@ There are four kinds of scenario:
   * --list
   * --input *file.apk*
 2. You want to remove certain permissions [and ADs] from the APK:
-  --remove
-  --input *file.apk*
-    --output *output.apk*
-    --permissions *PERM1,PERM2,...,PERMN*
-    --custom-methods *custom.apk | classes.dex*
-    [--ads]
+  * --remove
+  * --input *file.apk*
+  * --output *output.apk*
+  * --permissions *PERM1,PERM2,...,PERMN*
+  * --custom-methods *custom.apk | classes.dex*
+  * [--ads]
 3. You want to remove only the ADs from the APK:
-    --removeads
-    --input *file.apk*
-    --output *output.apk* 
+  * --removeads
+  * --input *file.apk*
+  * --output *output.apk* 
 4. You want to obtain statistics from a set of APKs stored in the same folder:
-    --statistics *folder/*
+  * --statistics *folder/*
 
 
 ## How works the permission removal?
@@ -96,6 +96,12 @@ boolean b = CustomMethods.isWifiEnabled(wifi);
 ## How works the ADs removal?
 
 All classes like [AdView](https://developers.google.com/android/reference/com/google/android/gms/ads/AdView) and [PublisherAdView](https://developers.google.com/android/reference/com/google/android/gms/ads/doubleclick/PublisherAdView) implement the *loadAd(...)* method.
-If this method isn't called the View doesn't load the AD :)
-Very simply: every time that I found a method called *loadAd* that is defined in a class belonging to *com.google.android.gms.ads.* and its return type is *void* I remove it.
+
+If this method isn't called the View doesn't load the AD, so, very simply: 
+
+every time that I found a method called *loadAd* 
+
+that is defined in a class belonging to *com.google.android.gms.ads.* 
+
+and its return type is *void* I remove it.
 
