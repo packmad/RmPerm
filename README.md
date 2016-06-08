@@ -35,7 +35,7 @@ N.b.: the square brackets indicate that it is an optional argument.
 There are four kinds of scenario:
 
 1. You want to see what permissions  are required by the APK:
-* --list
+  *--list
   --input *file.apk*
 2. You want to remove certain permissions [and ADs] from the APK:
   --remove
