@@ -16,16 +16,10 @@ import org.jf.dexlib2.iface.reference.MethodReference;
 import org.jf.dexlib2.immutable.ImmutableClassDef;
 import org.jf.dexlib2.immutable.ImmutableMethod;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
+import java.util.*;
 
 class BytecodeCustomizer {
     private static final String LOADAD = "loadAd";
@@ -44,9 +38,7 @@ class BytecodeCustomizer {
     private int nRemoved;
 
 
-    BytecodeCustomizer(File inputFile,
-                              File outputDex,
-                              IOutput out) {
+    BytecodeCustomizer(File inputFile, File outputDex, IOutput out) {
         this.apiToPermissions = null;
         this.redirections = null;
         this.customClasses = null;

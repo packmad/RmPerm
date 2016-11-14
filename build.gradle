@@ -8,9 +8,10 @@ repositories {
 }
 
 dependencies {
-    compile ('org.smali:dexlib2:2.1.2')
+    compile('org.smali:dexlib2:2.1.3')
+    compile('org.bouncycastle:bcprov-jdk15on:1.55')
     compile files(
-            'libs/bcprov-jdk15on-152.jar',
+            //'libs/bcprov-jdk15on-152.jar',
             'libs/zipio-lib-1.8.jar',
             'libs/zipsigner-lib-1.17.jar',
             'libs/kellinwood-logging-lib-1.1.jar')

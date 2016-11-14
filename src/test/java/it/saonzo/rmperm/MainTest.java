@@ -1,16 +1,7 @@
 package it.saonzo.rmperm;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-
 public class MainTest {
+    /*
     private static final File outputFolder = new File("./src/test/resources/output/");
     private static final File outputFile = new File(outputFolder, "output.apk");
     private static final File customDex = new File("./src/test/resources/custom.dex");
@@ -70,5 +61,5 @@ public class MainTest {
         Main.main(fromListToArray(args));
         Assert.assertTrue(outputFile.exists());
     }
-
+*/
 }
