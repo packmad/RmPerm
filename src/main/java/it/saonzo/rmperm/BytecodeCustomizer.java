@@ -38,7 +38,7 @@ class BytecodeCustomizer {
     private int nRemoved;
 
 
-    BytecodeCustomizer(File inputFile, File outputDex, IOutput out) {
+    BytecodeCustomizer(File inputFile, File outputDex, IOutput out) { // only for ads removal
         this.apiToPermissions = null;
         this.redirections = null;
         this.customClasses = null;

@@ -4,6 +4,8 @@ import org.jf.dexlib2.base.reference.BaseMethodReference;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 class DexMethod extends BaseMethodReference {
@@ -11,6 +13,23 @@ class DexMethod extends BaseMethodReference {
     private final String name;
     private final List<? extends CharSequence> parameterTypes;
     private final String returnType;
+
+
+    public DexMethod(String oneLineDef) throws ArrayIndexOutOfBoundsException {
+        String[] split = oneLineDef.split("-");
+        this.definingClass = split[0];
+        this.name = split[1];
+        split = split[2].split("\\)");
+        this.returnType = split[1];
+        String oneLineParams = split[0].replaceAll("\\(", "");
+        if (oneLineParams.equals("")) {
+            this.parameterTypes = Collections.emptyList();
+        } else {
+            split = oneLineParams.split(" ");
+            this.parameterTypes = Arrays.asList(split);
+        }
+    }
+
 
     public DexMethod(String definingClass,
                      String name,
@@ -25,6 +44,7 @@ class DexMethod extends BaseMethodReference {
         this.returnType = returnType;
     }
 
+
     public static List<String> parseAndConvertIntoDalvikTypes(String csvParams) {
         List<String> list = new ArrayList<>();
         for (String s : csvParams.split(",")) {
@@ -33,6 +53,7 @@ class DexMethod extends BaseMethodReference {
         }
         return list;
     }
+
 
     public static String fromJavaTypeToDalvikType(String jType) {
         switch (jType) {
@@ -58,6 +79,7 @@ class DexMethod extends BaseMethodReference {
                 return "L" + jType.replace(".", "/") + ";";
         }
     }
+
 
     @Nonnull
     @Override
