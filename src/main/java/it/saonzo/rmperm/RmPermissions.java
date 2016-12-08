@@ -6,7 +6,6 @@ import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 
 
@@ -19,16 +18,21 @@ public class RmPermissions extends AbsRmPerm {
     private boolean removeAds;
 
 
-    public RmPermissions(IOutput out, Set<String> permissionsToRemove, String inApkFilename, String outApkFilename) {
-        this(out, permissionsToRemove, inApkFilename, outApkFilename, null, false, false);
+    public RmPermissions(IOutput out, Set<String> permissionsToRemove, String inApkFilename, String outApkFilename,
+                         String customMethodsFilename) throws IOException {
+        this(out, permissionsToRemove, inApkFilename, outApkFilename, customMethodsFilename, false, false);
+        //TODO load custom.dex from resources
+        /*
         ClassLoader classLoader = getClass().getClassLoader();
         URL customMethodRes = classLoader.getResource("custom.dex");
         if (customMethodRes == null)
             throw new IllegalStateException("Cannot get the URL to local dex with custom methods!");
-        File customMethodsFile = new File(customMethodRes.getFile());
+        File customMethodsFile = File.createTempFile("custom", ".dex");
+        FileUtils.copyURLToFile(customMethodRes, customMethodsFile);
         if (!customMethodsFile.exists())
             throw new IllegalStateException("Cannot read the local dex file with custom methods!");
         customMethodsFilename = customMethodsFile.toString();
+        */
     }
 
     public RmPermissions(IOutput out, Set<String> permissionsToRemove, String inApkFilename, String outApkFilename,
@@ -40,7 +44,7 @@ public class RmPermissions extends AbsRmPerm {
         this.removeAds = removeAds;
     }
 
-    void removePermissions() throws Exception {
+    public void removePermissions() throws Exception {
         out.printf(IOutput.Level.VERBOSE, "Removing permission(s): %s\n", permissionsToRemove);
         Map<MethodReference, MethodReference> redirections = new HashMap<>();
         List<ClassDef> customClasses = new ArrayList<>();
